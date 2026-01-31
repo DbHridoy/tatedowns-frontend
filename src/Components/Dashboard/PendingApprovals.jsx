@@ -1,26 +1,26 @@
 import React from "react";
-import { HiOutlineCash, HiOutlineBriefcase, HiOutlineTruck } from "react-icons/hi";
+import { FiBriefcase, FiDollarSign, FiTruck } from "react-icons/fi";
 
 const approvals = [
   {
     id: 1,
-    title: "Downpayment Approval",
+    title: "Down Payment Approval",
     subtitle: "John Doe – $500 for Job #12345",
-    icon: <HiOutlineCash size={28} />,
+    icon: <FiDollarSign size={28} />,
     bg: "bg-orange-50",
   },
   {
     id: 2,
     title: "Job Close Approval",
     subtitle: "Jane Smith – Job #12346 ($3,000)",
-    icon: <HiOutlineBriefcase size={28} />,
+    icon: <FiBriefcase size={28} />,
     bg: "bg-blue-50",
   },
   {
     id: 3,
     title: "Mileage Log Approval",
     subtitle: "John Doe – $500 for Job #12345",
-    icon: <HiOutlineTruck size={28} />,
+    icon: <FiTruck size={28} />,
     bg: "bg-purple-50",
   },
 ];

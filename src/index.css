@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .page-container {
+    @apply w-full;
+  }
+
+  .section-pad {
+    @apply px-5 py-6 sm:px-6;
+  }
+}
+
 
 .subtract-width {
     width: calc(100% - 18rem);
