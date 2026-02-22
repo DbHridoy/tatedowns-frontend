@@ -116,7 +116,7 @@ const MainLayout = () => {
 
           {/* Topbar */}
           <div className="flex-1">
-            <Topbar label={activeLabel} />
+            <Topbar label={activeLabel} showLabel={false} />
           </div>
         </header>
 

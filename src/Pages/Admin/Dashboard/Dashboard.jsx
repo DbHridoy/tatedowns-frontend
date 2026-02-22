@@ -98,6 +98,7 @@ const Dashboard = () => {
   ];
   const leaderboardConfig = {
     columns: leaderboardColumns,
+    showMobileSort: false,
     filters: [
       {
         label: "Sort By",
@@ -138,7 +139,10 @@ const Dashboard = () => {
   return (
     <div className="page-container space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div className="text-sm text-gray-500">Filter stats by period</div>
+        <div className="text-sm ">
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-gray-500">Filter stats by period</p>
+        </div>
         <PeriodFilter
           periodType={statsPeriodType}
           dateValue={statsDateInput}
@@ -168,7 +172,7 @@ const Dashboard = () => {
       <DataTable
         title=""
         data={sortedLeaderboardRows}
-        config={{ ...leaderboardConfig, showSearch: false }}
+        config={{ ...leaderboardConfig, showSearch: false, showPagination: false }}
       />
       <PipelineOverview />
       {/* <PendingApprovals/> */}

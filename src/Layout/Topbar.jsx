@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUserRole } from "../redux/slice/authSlice";
 
-const Topbar = ({ label }) => {
+const Topbar = ({ label, showLabel = true }) => {
   const navigate = useNavigate();
   const role = useSelector(selectUserRole);
   const { data: profileData } = useGetMeQuery();
@@ -32,11 +32,15 @@ const Topbar = ({ label }) => {
   return (
     <div className="flex items-center justify-between w-full">
       {/* Page Title */}
-      <div className="min-w-0">
-        <h1 className="text-base sm:text-xl font-semibold truncate">
-          {label}
-        </h1>
-      </div>
+      {showLabel ? (
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-xl font-semibold truncate">
+            {label}
+          </h1>
+        </div>
+      ) : (
+        <div />
+      )}
 
       {/* Right section: notifications + avatar */}
       <div className="relative flex items-center gap-3 sm:gap-4">
