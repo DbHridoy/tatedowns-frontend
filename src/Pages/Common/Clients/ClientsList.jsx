@@ -6,6 +6,7 @@ import {
   useDeleteClientMutation,
   useGetAllClientsQuery,
 } from "../../../redux/api/clientApi";
+import { useGetAllUsersQuery } from "../../../redux/api/userApi";
 
 function ClientsList({ salesRepId } = {}) {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ function ClientsList({ salesRepId } = {}) {
     const sortOrder = searchParams.get("sortOrder") || "asc";
     const callStatus = searchParams.get("callStatus") || "";
     const leadStatus = searchParams.get("leadStatus") || "Not quoted";
+    const selectedSalesRepId = searchParams.get("salesRepId") || "";
 
     return {
       page: Number.isFinite(page) && page > 0 ? page : 1,
@@ -26,7 +28,12 @@ function ClientsList({ salesRepId } = {}) {
       search,
       sortKey,
       sortOrder,
-      filters: { role: "", callStatus, leadStatus },
+      filters: {
+        role: "",
+        callStatus,
+        leadStatus,
+        salesRepId: selectedSalesRepId,
+      },
     };
   });
 
@@ -43,6 +50,9 @@ function ClientsList({ salesRepId } = {}) {
     if (params.filters?.leadStatus) {
       nextParams.set("leadStatus", params.filters.leadStatus);
     }
+    if (params.filters?.salesRepId) {
+      nextParams.set("salesRepId", params.filters.salesRepId);
+    }
     setSearchParams(nextParams, { replace: true });
   }, [params, setSearchParams]);
 
@@ -58,10 +68,16 @@ function ClientsList({ salesRepId } = {}) {
     },
   });
   const [deleteClient] = useDeleteClientMutation();
+  const { data: salesRepsData } = useGetAllUsersQuery({
+    page: 1,
+    limit: 0,
+    filters: { role: "Sales Rep" },
+  });
 
   const clients = clientsData?.data || [];
   const totalItems = clientsData?.total;
   const isSalesRepView = Boolean(salesRepId);
+  const salesReps = salesRepsData?.data ?? [];
 
   const baseColumns = [
       { label: "No", accessor: "No" },
@@ -103,6 +119,19 @@ function ClientsList({ salesRepId } = {}) {
   const tableConfig = {
     columns: baseColumns,
     filters: [
+      ...(!isSalesRepView
+        ? [
+            {
+              label: "Sales Rep",
+              accessor: "salesRepId",
+              value: params.filters.salesRepId || "",
+              options: salesReps.reduce((acc, rep) => {
+                acc[rep.fullName || rep.email || rep._id] = rep._id;
+                return acc;
+              }, {}),
+            },
+          ]
+        : []),
       {
         label: "Call Status",
         accessor: "callStatus",

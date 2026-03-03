@@ -88,6 +88,19 @@ function JobsList({ showFilters = true, salesRepId } = {}) {
     ],
     filters: showFilters
       ? [
+          ...(!salesRepId
+            ? [
+                {
+                  label: "Sales Rep",
+                  accessor: "salesRepId",
+                  value: params.filters.salesRepId || "",
+                  options: salesReps.reduce((acc, rep) => {
+                    acc[rep.fullName || rep.email || rep._id] = rep._id;
+                    return acc;
+                  }, {}),
+                },
+              ]
+            : []),
           {
             label: "Production Manager",
             accessor: "productionManagerId",

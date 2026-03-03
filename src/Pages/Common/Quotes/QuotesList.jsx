@@ -4,6 +4,7 @@ import DataTable from "../../../Components/Common/DataTable";
 import { useDeleteQuoteMutation, useGetAllQuotesQuery } from "../../../redux/api/quoteApi";
 import toast from "react-hot-toast";
 import formatCurrency from "../../../utils/formatCurrency";
+import { useGetAllUsersQuery } from "../../../redux/api/userApi";
 
 function QuotesList({ salesRepId } = {}) {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ function QuotesList({ salesRepId } = {}) {
     const sortKey = searchParams.get("sortKey") || "fullName";
     const sortOrder = searchParams.get("sortOrder") || "asc";
     const status = searchParams.get("status") || "Pending";
+    const selectedSalesRepId = searchParams.get("salesRepId") || "";
 
     return {
       page: Number.isFinite(page) && page > 0 ? page : 1,
@@ -23,7 +25,7 @@ function QuotesList({ salesRepId } = {}) {
       search,
       sortKey,
       sortOrder,
-      filters: { status },
+      filters: { status, salesRepId: selectedSalesRepId },
     };
   });
 
@@ -35,6 +37,7 @@ function QuotesList({ salesRepId } = {}) {
     if (params.sortKey) nextParams.set("sortKey", params.sortKey);
     if (params.sortOrder) nextParams.set("sortOrder", params.sortOrder);
     if (params.filters?.status) nextParams.set("status", params.filters.status);
+    if (params.filters?.salesRepId) nextParams.set("salesRepId", params.filters.salesRepId);
     setSearchParams(nextParams, { replace: true });
   }, [params, setSearchParams]);
 
@@ -50,8 +53,14 @@ function QuotesList({ salesRepId } = {}) {
     },
   });
   const [deleteQuote] = useDeleteQuoteMutation();
+  const { data: salesRepsData } = useGetAllUsersQuery({
+    page: 1,
+    limit: 0,
+    filters: { role: "Sales Rep" },
+  });
 
   const quotes = data?.data ?? [];
+  const salesReps = salesRepsData?.data ?? [];
   const scopedQuotes = salesRepId
     ? quotes.filter((q) => {
         const repId =
@@ -108,20 +117,31 @@ function QuotesList({ salesRepId } = {}) {
       },
       { label: "Creation date", accessor: "createdAt", sortable: true },
     ],
-    filters: salesRepId
-      ? [
-          {
-            label: "Status",
-            accessor: "status",
-            value: params.filters.status || "",
-            options: {
-              Pending: "Pending",
-              Approved: "Approved",
-              Rejected: "Rejected",
+    filters: [
+      ...(!salesRepId
+        ? [
+            {
+              label: "Sales Rep",
+              accessor: "salesRepId",
+              value: params.filters.salesRepId || "",
+              options: salesReps.reduce((acc, rep) => {
+                acc[rep.fullName || rep.email || rep._id] = rep._id;
+                return acc;
+              }, {}),
             },
-          },
-        ]
-      : [],
+          ]
+        : []),
+      {
+        label: "Status",
+        accessor: "status",
+        value: params.filters.status || "",
+        options: {
+          Pending: "Pending",
+          Approved: "Approved",
+          Rejected: "Rejected",
+        },
+      },
+    ],
     actions: [
       {
         label: "View",
