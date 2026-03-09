@@ -326,12 +326,12 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
 
       {/* Pagination */}
       {showPagination && !loading && (
-        <div className="px-4 sm:px-6 py-4 border-t flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-          <span className="text-sm sm:text-base text-gray-600">
+        <div className="px-4 sm:px-6 py-4 border-t flex flex-col items-center gap-3">
+          <span className="text-sm sm:text-base text-gray-600 text-center">
             Page {currentPage} of {totalPages || 0}
           </span>
 
-          <div className="flex w-full sm:w-auto gap-2 justify-between sm:justify-end">
+          <div className="flex items-center gap-2 justify-center">
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
