@@ -9,6 +9,11 @@ import toast from "react-hot-toast";
 import SimpleLoader from "../../../Components/Common/SimpleLoader";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 
+const getFileName = (url = "") => {
+  const parts = decodeURIComponent(url).split("/");
+  return parts[parts.length - 1] || "File";
+};
+
 const AdminQuoteDetails = () => {
   const { quoteId } = useParams();
   const navigate = useNavigate();
@@ -119,9 +124,16 @@ const AdminQuoteDetails = () => {
     status,
     bookedOnSpot,
     bidSheet,
+    bidSheetUrl,
     createdAt,
     customQuoteId,
   } = quote;
+  const bidSheetSource = bidSheetUrl ?? bidSheet;
+  const bidSheets = Array.isArray(bidSheetSource)
+    ? bidSheetSource
+    : bidSheetSource
+      ? [{ bidSheetUrl: bidSheetSource }]
+      : [];
 
   /* ---------------- UI ---------------- */
   return (
@@ -245,20 +257,25 @@ const AdminQuoteDetails = () => {
         <div className="bg-white border rounded-lg section-pad">
           <h3 className="font-semibold mb-3">Bid Sheet</h3>
 
-          {bidSheet && !isEditing && (
-            <a
-              href={bidSheet}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              View Current Bid Sheet
-            </a>
+          {bidSheets.length > 0 && !isEditing && (
+            <div className="space-y-2">
+              {bidSheets.map((sheet) => (
+                <a
+                  key={sheet._id || sheet.id || sheet.bidSheetUrl}
+                  href={sheet.bidSheetUrl || sheet}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-600 underline"
+                >
+                  {getFileName(sheet.bidSheetUrl || sheet)}
+                </a>
+              ))}
+            </div>
           )}
 
           {isEditing && (
             <div className="space-y-2">
-              {bidSheet && (
+              {bidSheets.length > 0 && (
                 <p className="text-sm text-gray-600">
                   Current file will be replaced if you upload a new one
                 </p>
