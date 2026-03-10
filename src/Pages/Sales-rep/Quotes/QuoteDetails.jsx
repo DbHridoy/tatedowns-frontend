@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useGetQuoteByIdQuery,
+  useDeleteQuoteMutation,
   useUpdateQuoteMutation,
 } from "../../../redux/api/quoteApi";
 import toast from "react-hot-toast";
 import SimpleLoader from "../../../Components/Common/SimpleLoader";
+import DeleteModal from "../../../Components/Common/DeleteModal";
 
 const getFileName = (url = "") => {
   const parts = decodeURIComponent(url).split("/");
@@ -26,10 +28,12 @@ const QuoteDetails = () => {
 
   const { data: quoteData, isLoading } = useGetQuoteByIdQuery(quoteId);
   const [updateQuote, { isLoading: isUpdating }] = useUpdateQuoteMutation();
+  const [deleteQuote, { isLoading: isDeleting }] = useDeleteQuoteMutation();
 
   const quote = quoteData?.data;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState(null);
   const [bidSheetFile, setBidSheetFile] = useState(null);
 
@@ -95,10 +99,6 @@ const QuoteDetails = () => {
         payload.append("bidSheet", bidSheetFile);
       }
       payload.append("_dummy", "true");
-      // ✅ correct debug
-      for (let [key, value] of payload.entries()) {
-        //console.log(key, value);
-      }
 
       await updateQuote({
         id: quote._id,
@@ -128,8 +128,19 @@ const QuoteDetails = () => {
     });
   };
 
-  const handleConvertToJob = () => {
-    navigate(`/sales-rep/jobs/add-job?quoteId=${quote._id}`);
+  const handleDelete = async () => {
+    try {
+      await deleteQuote({
+        id: quote._id,
+        clientId: quote?.clientId?._id ?? quote?.clientId,
+      });
+      toast.success("Quote deleted successfully");
+      setShowDeleteModal(false);
+      navigate("/sales-rep/quotes");
+    } catch (err) {
+      console.error("Delete failed", err);
+      toast.error("Failed to delete quote");
+    }
   };
 
   if (isLoading || !quote) {
@@ -356,13 +367,22 @@ const QuoteDetails = () => {
               >
                 Edit Quote
               </button>
-              <button className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-3 rounded text-sm sm:text-base">
-                Delete
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                disabled={isDeleting}
+                className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-3 rounded text-sm sm:text-base disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </>
           )}
         </div>
       </div>
+      <DeleteModal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

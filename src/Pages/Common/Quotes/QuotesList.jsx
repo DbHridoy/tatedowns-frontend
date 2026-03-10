@@ -86,17 +86,18 @@ function QuotesList({ salesRepId } = {}) {
             : "Pending";
 
     return {
-    _id: q._id,
-    clientName: q.clientId?.clientName ?? "N/A",
-    estimatedPrice: q.estimatedPrice,
-    bidSheet: q.bidSheet,
-    bookedOnSpot: q.bookedOnSpot,
-    expiryDate: new Date(q.expiryDate).toLocaleDateString(),
-    notes: q.notes,
-    status: displayStatus,
-    createdAt: new Date(q.createdAt).toLocaleDateString(),
-    updatedAt: new Date(q.updatedAt).toLocaleDateString(),
-    customQuoteId: q.customQuoteId,
+      _id: q._id,
+      clientId: q.clientId?._id ?? q.clientId,
+      clientName: q.clientId?.clientName ?? "N/A",
+      estimatedPrice: q.estimatedPrice,
+      bidSheet: q.bidSheet,
+      bookedOnSpot: q.bookedOnSpot,
+      expiryDate: new Date(q.expiryDate).toLocaleDateString(),
+      notes: q.notes,
+      status: displayStatus,
+      createdAt: new Date(q.createdAt).toLocaleDateString(),
+      updatedAt: new Date(q.updatedAt).toLocaleDateString(),
+      customQuoteId: q.customQuoteId,
     };
   });
 
@@ -158,7 +159,7 @@ function QuotesList({ salesRepId } = {}) {
         modalMessage: (item) =>
           `Are you sure you want to delete ${item.clientName}?`,
         onConfirm: async (item) => {
-          await deleteQuote(item._id);
+          await deleteQuote({ id: item._id, clientId: item.clientId });
           toast.success("Quote deleted successfully");
         },
       },
