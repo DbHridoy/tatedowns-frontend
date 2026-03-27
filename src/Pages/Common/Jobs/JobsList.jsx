@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import DataTable from "../../../Components/Common/DataTable";
-import { useGetAllJobsQuery } from "../../../redux/api/jobApi";
+import { useDeleteJobMutation, useGetAllJobsQuery } from "../../../redux/api/jobApi";
 import { useGetAllUsersQuery } from "../../../redux/api/userApi";
 import formatCurrency from "../../../utils/formatCurrency";
+import toast from "react-hot-toast";
 
-function JobsList({ showFilters = true, salesRepId } = {}) {
+function JobsList({ showFilters = true, salesRepId, canDelete = false } = {}) {
   const navigate = useNavigate();
   const [params, setParams] = useState({
     page: 1,
@@ -31,6 +32,7 @@ function JobsList({ showFilters = true, salesRepId } = {}) {
       ...(salesRepId ? { salesRepId } : {}),
     },
   });
+  const [deleteJob] = useDeleteJobMutation();
   const { data: salesRepsData } = useGetAllUsersQuery({
     page: 1,
     limit: 0,
@@ -85,6 +87,22 @@ function JobsList({ showFilters = true, salesRepId } = {}) {
           navigate(`${item._id}`);
         },
       },
+      ...(canDelete
+        ? [
+            {
+              label: "Delete",
+              className: "bg-red-500 text-white p-2 rounded-lg",
+              modal: true,
+              modalTitle: "Delete Job",
+              modalMessage: (item) =>
+                `Are you sure you want to delete the job for ${item.clientName}?`,
+              onConfirm: async (item) => {
+                await deleteJob(item._id).unwrap();
+                toast.success("Job deleted successfully");
+              },
+            },
+          ]
+        : []),
     ],
     filters: showFilters
       ? [

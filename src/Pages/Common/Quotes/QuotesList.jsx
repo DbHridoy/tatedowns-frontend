@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import formatCurrency from "../../../utils/formatCurrency";
 import { useGetAllUsersQuery } from "../../../redux/api/userApi";
 
-function QuotesList({ salesRepId } = {}) {
+function QuotesList({ salesRepId, canDelete = false } = {}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -151,18 +151,22 @@ function QuotesList({ salesRepId } = {}) {
           navigate(`${item._id}`);
         },
       },
-      {
-        label: "Delete",
-        className: "bg-red-500 text-white p-2 rounded-lg",
-        modal: true,
-        modalTitle: "Delete Quote",
-        modalMessage: (item) =>
-          `Are you sure you want to delete ${item.clientName}?`,
-        onConfirm: async (item) => {
-          await deleteQuote({ id: item._id, clientId: item.clientId });
-          toast.success("Quote deleted successfully");
-        },
-      },
+      ...(canDelete
+        ? [
+            {
+              label: "Delete",
+              className: "bg-red-500 text-white p-2 rounded-lg",
+              modal: true,
+              modalTitle: "Delete Quote",
+              modalMessage: (item) =>
+                `Are you sure you want to delete ${item.clientName}?`,
+              onConfirm: async (item) => {
+                await deleteQuote({ id: item._id, clientId: item.clientId });
+                toast.success("Quote deleted successfully");
+              },
+            },
+          ]
+        : []),
     ],
     totalItems,
     currentPage: params.page,

@@ -1,3 +1,5 @@
 import QuotesList from "../../Common/Quotes/QuotesList";
 
-export default QuotesList;
+const AdminQuote = () => <QuotesList canDelete />;
+
+export default AdminQuote;

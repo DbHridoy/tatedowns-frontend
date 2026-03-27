@@ -3,13 +3,16 @@ import JobDetailsOverview from "../../../Components/Common/JobDetailsOverview";
 import DC from "../../../Components/Sales-rep/Jobs/DC";
 import { useEffect, useMemo, useState } from "react";
 import {
+  useDeleteJobMutation,
   useGetJobByIdQuery,
   useUpdateJobMutation,
 } from "../../../redux/api/jobApi";
 import { useGetAllUsersQuery } from "../../../redux/api/userApi";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import DesignConsultationCreate from "../../Sales-rep/Jobs/DesignConsultation";
 import SimpleLoader from "../../../Components/Common/SimpleLoader";
+import DeleteModal from "../../../Components/Common/DeleteModal";
+import toast from "react-hot-toast";
 
 const formatDateInput = (value) => {
   if (!value) return "";
@@ -31,8 +34,10 @@ const statusOptions = [
 
 const AdminJobDetailsPage = () => {
   const { jobId } = useParams();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showDcForm, setShowDcForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formJob, setFormJob] = useState({
     title: "",
     status: "",
@@ -53,6 +58,7 @@ const AdminJobDetailsPage = () => {
 
   const { data, isLoading, isError } = useGetJobByIdQuery(jobId, { skip: !jobId });
   const [updateJob, { isLoading: isSaving }] = useUpdateJobMutation();
+  const [deleteJob, { isLoading: isDeleting }] = useDeleteJobMutation();
   const { data: salesRepsData } = useGetAllUsersQuery({
     page: 1,
     limit: 0,
@@ -185,6 +191,18 @@ const AdminJobDetailsPage = () => {
     setIsEditing(false);
   };
 
+  const handleDelete = async () => {
+    if (!jobId) return;
+
+    try {
+      await deleteJob(jobId).unwrap();
+      toast.success("Job deleted successfully");
+      navigate("/admin/jobs");
+    } catch {
+      toast.error("Failed to delete job");
+    }
+  };
+
   return (
     <div className="page-container space-y-6">
       {/* Edit/Save Buttons */}
@@ -237,12 +255,21 @@ const AdminJobDetailsPage = () => {
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm sm:text-base"
-          >
-            Edit
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm sm:text-base"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              disabled={isDeleting}
+              className="bg-red-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
         )}
       </div>
       {/* Job Header */}
@@ -368,6 +395,12 @@ const AdminJobDetailsPage = () => {
 
       {/* Notes Section */}
       <SharedNotes notes={job.notes} />
+
+      <DeleteModal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };
