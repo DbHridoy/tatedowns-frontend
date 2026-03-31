@@ -281,7 +281,7 @@ const DesignConsultationCreate = ({
         </label>
         <input
           type="file"
-          accept=".pdf,.docx,.xlsx"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
           className="w-full text-sm sm:text-base"
           onChange={handleFileChange}
           required={!existingFileUrl}
