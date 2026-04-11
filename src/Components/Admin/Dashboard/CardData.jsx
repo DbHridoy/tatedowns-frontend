@@ -27,7 +27,7 @@ const CardData = ({ stats, isLoading, isError }) => {
       icon: FiDollarSign,
     },
     {
-      title: "Total Revenue",
+      title: "Total Sold",
       value: formatCurrency(stats?.totalRevenue),
       icon: FiDollarSign,
     },
