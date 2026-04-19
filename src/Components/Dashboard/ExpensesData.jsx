@@ -1,21 +1,22 @@
-import React, { useState } from 'react'
+import { useState } from "react";
 
 const ExpensesData = () => {
+  const [filters, setFilters] = useState({
+    salesRep: "All Representatives",
+    timeRange: "This Month",
+    cluster: "All Clusters",
+  });
 
-     const [activeFilter, setActiveFilter] = useState('Week');
-    
-      const filters = ['Week', 'Month', 'Year', 'All Clusters'];
-    
-      const data = [
-        { title: 'Total Leads', value: '$145,230', change: '+12%', color: 'text-green-500' },
-        { title: 'Total Quotes', value: '120', change: '+8%', color: 'text-green-500' },
-        { title: 'Booked Jobs', value: '100', change: '-3%', color: 'text-red-500' },
-        { title: 'DC Pending', value: '34', change: 'Pending', color: 'text-yellow-500' },
-      
-      ];
+  const handleFilterChange = (event, key) => {
+    setFilters((current) => ({
+      ...current,
+      [key]: event.target.value,
+    }));
+  };
+
   return (
     <div>
-        <div className="p-6 mb-2 border rounded-lg shadow-sm">
+      <div className="p-6 mb-2 border rounded-lg shadow-sm">
         <div className="flex justify-between mb-4 ">
           <div>
             <h3 className="mb-4 font-semibold">Filters</h3>
@@ -25,9 +26,8 @@ const ExpensesData = () => {
               className="text-blue-500"
               onClick={() =>
                 setFilters({
-                  salesRep: "All Sales Reps",
-                  status: "All Statuses",
-                  timeRange: "All Time Ranges",
+                  salesRep: "All Representatives",
+                  timeRange: "This Month",
                   cluster: "All Clusters",
                 })
               }
@@ -54,8 +54,8 @@ const ExpensesData = () => {
           <div>
             <p className="text-[16px] mb-2"> Time Range</p>
             <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange(e, "status")}
+              value={filters.timeRange}
+              onChange={(e) => handleFilterChange(e, "timeRange")}
               className="p-2 border rounded-md"
             >
               <option>This Month</option>
@@ -86,9 +86,8 @@ const ExpensesData = () => {
           </div>
         </div>
       </div>
-      
     </div>
-  )
-}
+  );
+};
 
-export default ExpensesData
+export default ExpensesData;

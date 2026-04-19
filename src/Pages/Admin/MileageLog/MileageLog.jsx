@@ -5,7 +5,7 @@ import ReportsData from "../../../Components/Dashboard/ReportsData";
 const MileageLog = () => {
   return (
     <div>
-      <MileageLogData />
+      <ExpensesData />
       <ReportsData />
       <ExpenseBreakdown />
     </div>

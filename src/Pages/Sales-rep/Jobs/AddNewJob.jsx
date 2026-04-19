@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useCreateNewJobMutation } from "../../../redux/api/jobApi";
 import { useGetAllQuotesQuery, useGetQuoteByIdQuery, useUpdateQuoteMutation } from "../../../redux/api/quoteApi";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -36,6 +36,7 @@ const AddNewJob = () => {
   const [createNewJob, { isLoading: isCreating }] = useCreateNewJobMutation();
   const [createJobNote, { isLoading: isCreatingJobNote }] = useAddNoteMutation();
   const [updateQuote] = useUpdateQuoteMutation();
+  const isSubmittingJob = isCreating || isCreatingJobNote;
 
   // Form state
   const [selectedQuoteId, setSelectedQuoteId] = useState("");
@@ -144,7 +145,7 @@ const AddNewJob = () => {
       }
       toast.success("Job created successfully!");
       navigate("/sales-rep/jobs");
-    } catch (error) {
+    } catch {
       toast.error("Failed to create job");
     }
   };
@@ -353,10 +354,10 @@ const AddNewJob = () => {
           </button>
           <button
             type="submit"
-            disabled={isCreating}
-            className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded text-sm sm:text-base"
+            disabled={isSubmittingJob}
+            className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded text-sm sm:text-base disabled:opacity-60"
           >
-            {isCreating ? "Creating..." : "Create Job"}
+            {isSubmittingJob ? "Creating Job..." : "Create Job"}
           </button>
         </div>
       </form>

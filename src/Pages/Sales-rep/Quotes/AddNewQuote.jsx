@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useCreateQuoteMutation } from "../../../redux/api/quoteApi";
 import { useGetAllClientsQuery } from "../../../redux/api/clientApi";
 import { selectCurrentUser } from "../../../redux/slice/authSlice";
@@ -63,7 +63,7 @@ const AddNewQuote = () => {
       } else {
         navigate(-1);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to create quote");
     }
   };
@@ -145,7 +145,7 @@ const AddNewQuote = () => {
               Click to upload or drag and drop
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              PDF or image files (Max 10MB)
+              PDF or image files (Max 50MB)
             </p>
             {file && <p className="text-sm text-green-600 mt-2">{file.name}</p>}
           </label>
@@ -211,7 +211,7 @@ const AddNewQuote = () => {
             disabled={isSubmitting}
             className="w-full sm:flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm sm:text-base hover:bg-blue-700 disabled:opacity-60"
           >
-            {isSubmitting ? "Saving..." : "Save Quote"}
+            {isSubmitting ? "Creating Quote..." : "Create Quote"}
           </button>
         </div>
 

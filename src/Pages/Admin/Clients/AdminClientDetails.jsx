@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import {
@@ -28,16 +28,14 @@ const getFileNameFromUrl = (url) => {
 /* -------------------- Component -------------------- */
 const AdminClientDetails = () => {
   const { clientId } = useParams();
-  const navigate = useNavigate();
-
   const { data, isLoading, isError, refetch } = useGetClientByIdQuery(
     clientId,
     { skip: !clientId }
   );
 
-  const [updateClient] = useUpdateClientMutation();
-  const [addCallLog] = useAddCallLogMutation();
-  const [addNote] = useAddNoteMutation();
+  const [updateClient, { isLoading: isSavingClient }] = useUpdateClientMutation();
+  const [addCallLog, { isLoading: isAddingCallLog }] = useAddCallLogMutation();
+  const [addNote, { isLoading: isAddingNote }] = useAddNoteMutation();
 
   const client = data?.data;
 
@@ -132,7 +130,7 @@ const AdminClientDetails = () => {
       setNoteText("");
       setNoteFile(null);
       refetch();
-    } catch (err) {
+    } catch {
       toast.error("Failed to add note");
     }
   };
@@ -173,9 +171,10 @@ const AdminClientDetails = () => {
           <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handleSaveClient}
+              disabled={isSavingClient}
               className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded text-sm sm:text-base"
             >
-              Save
+              {isSavingClient ? "Saving..." : "Save"}
             </button>
             <button
               onClick={handleCancelEdit}
@@ -352,9 +351,10 @@ const AdminClientDetails = () => {
 
         <button
           onClick={handleAddNote}
+          disabled={isAddingNote}
           className="w-full bg-gray-100 p-2 rounded text-sm sm:text-base"
         >
-          Add Note
+          {isAddingNote ? "Adding Note..." : "Add Note"}
         </button>
 
         {client.notes?.length > 0 ? (
@@ -403,6 +403,7 @@ const AdminClientDetails = () => {
       {showCallModal && (
         <AddCallLog
           clientId={clientId}
+          isSubmitting={isAddingCallLog}
           closeModal={() => {
             setShowCallModal(false);
             refetch();

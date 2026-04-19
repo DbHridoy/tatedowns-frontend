@@ -219,7 +219,7 @@ const AdminJobDetailsPage = () => {
               className="bg-green-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
               disabled={isSaving}
             >
-              Approve Down Payment
+              {isSaving ? "Updating..." : "Approve Down Payment"}
             </button>
           )}
           {job?.status === "DC Awaiting Approval" && (
@@ -233,7 +233,7 @@ const AdminJobDetailsPage = () => {
               className="bg-green-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
               disabled={isSaving}
             >
-              Approve DC
+              {isSaving ? "Updating..." : "Approve DC"}
             </button>
           )}
         </div>
@@ -251,7 +251,7 @@ const AdminJobDetailsPage = () => {
               className="bg-green-500 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
               disabled={isSaving}
             >
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </>
         ) : (
@@ -325,7 +325,7 @@ const AdminJobDetailsPage = () => {
                 className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                 disabled={isSaving}
               >
-                Save Assignment
+                {isSaving ? "Saving Assignment..." : "Save Assignment"}
               </button>
             </div>
           ) : (

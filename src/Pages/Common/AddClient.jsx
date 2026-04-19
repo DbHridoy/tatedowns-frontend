@@ -281,7 +281,7 @@ const AddClient = () => {
             disabled={isLoading}
             className="w-full sm:flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm sm:text-base"
           >
-            {isLoading ? "Saving..." : "Save Client"}
+            {isLoading ? "Creating Lead..." : "Create Lead"}
           </button>
         </div>
         </form>

@@ -197,7 +197,7 @@ const PmJobDetailsPage = () => {
                 className="w-full sm:w-auto bg-green-500 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                 disabled={isSaving}
               >
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </button>
               {getStatusAction() && (
                 <button
@@ -205,7 +205,7 @@ const PmJobDetailsPage = () => {
                   className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                   disabled={isSaving}
                 >
-                  {getStatusAction().label}
+                  {isSaving ? "Updating..." : getStatusAction().label}
                 </button>
               )}
               {canCancelJob && (
@@ -214,7 +214,7 @@ const PmJobDetailsPage = () => {
                   className="w-full sm:w-auto bg-gray-800 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                   disabled={isSaving}
                 >
-                  Mark as Cancelled
+                  {isSaving ? "Updating..." : "Mark as Cancelled"}
                 </button>
               )}
             </>
@@ -251,7 +251,7 @@ const PmJobDetailsPage = () => {
               className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-md text-sm sm:text-base"
               disabled={isSaving}
             >
-              Mark as Scheduled and Open
+              {isSaving ? "Updating..." : "Mark as Scheduled and Open"}
             </button>
           )
         )}
