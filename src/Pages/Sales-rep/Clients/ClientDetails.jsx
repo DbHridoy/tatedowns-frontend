@@ -10,6 +10,7 @@ import {
   useAddNoteMutation,
 } from "../../../redux/api/clientApi";
 import SimpleLoader from "../../../Components/Common/SimpleLoader";
+import NoteImagePreview from "../../../Components/Common/NoteImagePreview";
 
 /* -------------------- Utils -------------------- */
 const isImageFile = (url) => {
@@ -369,10 +370,10 @@ const ClientDetails = () => {
                 {note.file && (
                   <div>
                     {isImageFile(note.file) ? (
-                      <img
+                      <NoteImagePreview
                         src={note.file}
                         alt="Attachment"
-                        className="w-full rounded border"
+                        thumbClassName="max-h-72 w-full object-cover"
                       />
                     ) : (
                       <a

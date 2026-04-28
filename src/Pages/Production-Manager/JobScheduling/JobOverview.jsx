@@ -15,6 +15,7 @@ import { selectCurrentUser } from "../../../redux/slice/authSlice";
 import toast from "react-hot-toast";
 import { useAddNoteMutation } from "../../../redux/api/clientApi";
 import SimpleLoader from "../../../Components/Common/SimpleLoader";
+import NoteImagePreview from "../../../Components/Common/NoteImagePreview";
 const isImageFile = (url = "") => /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url);
 
 const getFileName = (url = "") => decodeURIComponent(url.split("/").pop());
@@ -236,10 +237,10 @@ export default function JobOverview() {
                   {note.file && (
                     <div className="mt-3">
                       {isImageFile(note.file) ? (
-                        <img
+                        <NoteImagePreview
                           src={note.file}
                           alt="Note attachment"
-                          className="w-32 h-32 object-cover rounded border"
+                          thumbClassName="h-32 w-32 object-cover"
                         />
                       ) : (
                         <a
