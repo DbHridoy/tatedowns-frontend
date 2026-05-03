@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DataTable from "../../../Components/Common/DataTable";
 import { useDeleteJobMutation, useGetAllJobsQuery } from "../../../redux/api/jobApi";
 import { useGetAllUsersQuery } from "../../../redux/api/userApi";
 import formatCurrency from "../../../utils/formatCurrency";
 import toast from "react-hot-toast";
+
+const SUPPORTED_SORT_KEYS = ["clientName", "price", "status", "createdAt", "startDate"];
 
 function JobsList({ showFilters = true, salesRepId, canDelete = false } = {}) {
   const navigate = useNavigate();
@@ -12,7 +14,7 @@ function JobsList({ showFilters = true, salesRepId, canDelete = false } = {}) {
     page: 1,
     limit: 10,
     search: "",
-    sortKey: "",
+    sortKey: "createdAt",
     sortOrder: "asc",
     filters: {
       salesRepId: "",
@@ -21,12 +23,9 @@ function JobsList({ showFilters = true, salesRepId, canDelete = false } = {}) {
     },
   });
 
-  const sortValue = params.sortKey
-    ? `${params.sortOrder === "desc" ? "-" : ""}${params.sortKey}`
-    : "";
   const { data, isLoading } = useGetAllJobsQuery({
-    ...params,
-    sort: sortValue,
+    page: 1,
+    limit: 0,
     filters: {
       ...params.filters,
       ...(salesRepId ? { salesRepId } : {}),
@@ -44,21 +43,71 @@ function JobsList({ showFilters = true, salesRepId, canDelete = false } = {}) {
     filters: { role: "Production Manager" },
   });
 
-  const jobs = data?.data || [];
-  const totalItems = data?.total || 0;
   const salesReps = salesRepsData?.data ?? [];
   const productionManagers = productionManagersData?.data ?? [];
+  const normalizedJobs = useMemo(
+    () =>
+      (data?.data ?? []).map((job) => ({
+        _id: job._id,
+        clientName: job.clientId?.clientName ?? "N/A",
+        price: Number(job.price ?? job.estimatedPrice ?? 0),
+        status: job.status ?? "",
+        createdAt: job.createdAt,
+        startDate: job.startDate ?? job.estimatedStartDate,
+      })),
+    [data?.data]
+  );
 
-  const formattedJobs = jobs.map((job) => ({
-    _id: job._id,
-    clientName: job.clientId?.clientName ?? "N/A",
-    price: job.price ?? job.estimatedPrice ?? 0,
-    status: job.status,
-    createdAt: job.createdAt,
-    // Keep display order consistent with backend sort fallback:
-    // backend sorts by startDate, then falls back to estimatedStartDate.
-    startDate: job.startDate ?? job.estimatedStartDate,
-  }));
+  const filteredJobs = useMemo(() => {
+    const searchValue = params.search.trim().toLowerCase();
+
+    return normalizedJobs.filter((job) => {
+      if (!searchValue) return true;
+
+      return [job.clientName, job.status, String(job.price)].some((value) =>
+        String(value || "")
+          .toLowerCase()
+          .includes(searchValue)
+      );
+    });
+  }, [normalizedJobs, params.search]);
+
+  const sortedJobs = useMemo(() => {
+    const sortKey = SUPPORTED_SORT_KEYS.includes(params.sortKey)
+      ? params.sortKey
+      : "createdAt";
+    const items = [...filteredJobs];
+
+    items.sort((a, b) => {
+      const aValue = a?.[sortKey];
+      const bValue = b?.[sortKey];
+
+      if (sortKey === "createdAt" || sortKey === "startDate") {
+        return new Date(aValue || 0).getTime() - new Date(bValue || 0).getTime();
+      }
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return aValue - bValue;
+      }
+
+      return String(aValue || "").localeCompare(String(bValue || ""));
+    });
+
+    return params.sortOrder === "desc" ? items.reverse() : items;
+  }, [filteredJobs, params.sortKey, params.sortOrder]);
+
+  const totalItems = sortedJobs.length;
+  const formattedJobs = useMemo(() => {
+    const start = (params.page - 1) * params.limit;
+    return sortedJobs.slice(start, start + params.limit);
+  }, [sortedJobs, params.page, params.limit]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalItems / params.limit));
+    if (params.page > totalPages) {
+      setParams((prev) => ({ ...prev, page: totalPages }));
+    }
+  }, [params.limit, params.page, totalItems]);
 
   const tableConfig = {
     columns: [
@@ -150,6 +199,7 @@ function JobsList({ showFilters = true, salesRepId, canDelete = false } = {}) {
     itemsPerPage: params.limit,
     sortKey: params.sortKey,
     sortOrder: params.sortOrder,
+    searchValue: params.search,
     onPageChange: (page) => setParams((p) => ({ ...p, page })),
     onSearch: (search) => setParams((p) => ({ ...p, search, page: 1 })),
     onFilterChange: (key, value) =>

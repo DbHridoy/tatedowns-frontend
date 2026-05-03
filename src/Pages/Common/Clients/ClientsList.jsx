@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import DataTable from "../../../Components/Common/DataTable";
 import {
@@ -11,16 +11,24 @@ import { useGetAllUsersQuery } from "../../../redux/api/userApi";
 function ClientsList({ salesRepId } = {}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const supportedSortKeys = [
+    "clientName",
+    "phoneNumber",
+    "callStatus",
+    "leadStatus",
+    "createdAt",
+  ];
 
   const [params, setParams] = useState(() => {
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
     const search = searchParams.get("search") || "";
-    const sortKey = searchParams.get("sortKey") || "";
+    const rawSortKey = searchParams.get("sortKey");
     const sortOrder = searchParams.get("sortOrder") || "asc";
     const callStatus = searchParams.get("callStatus") || "";
     const leadStatus = searchParams.get("leadStatus") || "Not quoted";
     const selectedSalesRepId = searchParams.get("salesRepId") || "";
+    const sortKey = supportedSortKeys.includes(rawSortKey) ? rawSortKey : "createdAt";
 
     return {
       page: Number.isFinite(page) && page > 0 ? page : 1,
@@ -56,12 +64,9 @@ function ClientsList({ salesRepId } = {}) {
     setSearchParams(nextParams, { replace: true });
   }, [params, setSearchParams]);
 
-  const sortValue = params.sortKey
-    ? `${params.sortOrder === "desc" ? "-" : ""}${params.sortKey}`
-    : "";
   const { data: clientsData, isLoading } = useGetAllClientsQuery({
-    ...params,
-    sort: sortValue,
+    page: 1,
+    limit: 0,
     filters: {
       ...params.filters,
       ...(salesRepId ? { salesRepId } : {}),
@@ -74,10 +79,69 @@ function ClientsList({ salesRepId } = {}) {
     filters: { role: "Sales Rep" },
   });
 
-  const clients = clientsData?.data || [];
-  const totalItems = clientsData?.total;
   const isSalesRepView = Boolean(salesRepId);
   const salesReps = salesRepsData?.data ?? [];
+  const normalizedClients = useMemo(
+    () =>
+      (clientsData?.data ?? []).map((client) => ({
+        ...client,
+        clientName: client.clientName ?? "N/A",
+        phoneNumber: client.phoneNumber ?? "",
+        callStatus: client.callStatus ?? "",
+        leadStatus: client.leadStatus ?? "",
+        createdAt: client.createdAt,
+      })),
+    [clientsData?.data]
+  );
+
+  const filteredClients = useMemo(() => {
+    const searchValue = params.search.trim().toLowerCase();
+
+    return normalizedClients.filter((client) => {
+      if (!searchValue) return true;
+
+      return [
+        client.clientName,
+        client.phoneNumber,
+        client.callStatus,
+        client.leadStatus,
+      ].some((value) =>
+        String(value || "")
+          .toLowerCase()
+          .includes(searchValue)
+      );
+    });
+  }, [normalizedClients, params.search]);
+
+  const sortedClients = useMemo(() => {
+    const items = [...filteredClients];
+
+    items.sort((a, b) => {
+      const aValue = a?.[params.sortKey];
+      const bValue = b?.[params.sortKey];
+
+      if (params.sortKey === "createdAt") {
+        return new Date(aValue || 0).getTime() - new Date(bValue || 0).getTime();
+      }
+
+      return String(aValue || "").localeCompare(String(bValue || ""));
+    });
+
+    return params.sortOrder === "desc" ? items.reverse() : items;
+  }, [filteredClients, params.sortKey, params.sortOrder]);
+
+  const totalItems = sortedClients.length;
+  const pagedClients = useMemo(() => {
+    const start = (params.page - 1) * params.limit;
+    return sortedClients.slice(start, start + params.limit);
+  }, [sortedClients, params.page, params.limit]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalItems / params.limit));
+    if (params.page > totalPages) {
+      setParams((prev) => ({ ...prev, page: totalPages }));
+    }
+  }, [params.limit, params.page, totalItems]);
 
   const baseColumns = [
       { label: "No", accessor: "No" },
@@ -188,6 +252,7 @@ function ClientsList({ salesRepId } = {}) {
     itemsPerPage: params.limit,
     sortKey: params.sortKey,
     sortOrder: params.sortOrder,
+    searchValue: params.search,
     onPageChange: (page) => setParams((p) => ({ ...p, page })),
     onSearch: (search) => setParams((p) => ({ ...p, search, page: 1 })),
     onFilterChange: (key, value) =>
@@ -216,7 +281,7 @@ function ClientsList({ salesRepId } = {}) {
       </div>
       <DataTable
         title="Leads"
-        data={clients || []}
+        data={pagedClients}
         config={tableConfig}
         loading={isLoading}
       />

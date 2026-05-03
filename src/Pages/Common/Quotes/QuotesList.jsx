@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DataTable from "../../../Components/Common/DataTable";
 import { useDeleteQuoteMutation, useGetAllQuotesQuery } from "../../../redux/api/quoteApi";
 import toast from "react-hot-toast";
@@ -9,15 +9,17 @@ import { useGetAllUsersQuery } from "../../../redux/api/userApi";
 function QuotesList({ salesRepId, canDelete = false } = {}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const supportedSortKeys = ["clientName", "estimatedPrice", "status", "createdAt"];
 
   const [params, setParams] = useState(() => {
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
     const search = searchParams.get("search") || "";
-    const sortKey = searchParams.get("sortKey") || "fullName";
+    const rawSortKey = searchParams.get("sortKey");
     const sortOrder = searchParams.get("sortOrder") || "asc";
     const status = searchParams.get("status") || "Pending";
     const selectedSalesRepId = searchParams.get("salesRepId") || "";
+    const sortKey = supportedSortKeys.includes(rawSortKey) ? rawSortKey : "createdAt";
 
     return {
       page: Number.isFinite(page) && page > 0 ? page : 1,
@@ -41,12 +43,9 @@ function QuotesList({ salesRepId, canDelete = false } = {}) {
     setSearchParams(nextParams, { replace: true });
   }, [params, setSearchParams]);
 
-  const sortValue = params.sortKey
-    ? `${params.sortOrder === "desc" ? "-" : ""}${params.sortKey}`
-    : "";
   const { data, isLoading } = useGetAllQuotesQuery({
-    ...params,
-    sort: sortValue,
+    page: 1,
+    limit: 0,
     filters: {
       ...params.filters,
       ...(salesRepId ? { salesRepId } : {}),
@@ -59,47 +58,101 @@ function QuotesList({ salesRepId, canDelete = false } = {}) {
     filters: { role: "Sales Rep" },
   });
 
-  const quotes = data?.data ?? [];
   const salesReps = salesRepsData?.data ?? [];
-  const scopedQuotes = salesRepId
-    ? quotes.filter((q) => {
-        const repId =
-          typeof q.salesRepId === "string"
-            ? q.salesRepId
-            : q.salesRepId?._id;
-        return repId === salesRepId;
-      })
-    : quotes;
-  const totalItems = data?.total;
+  const normalizedQuotes = useMemo(
+    () =>
+      (data?.data ?? []).map((q) => {
+        const normalizedStatus = String(q.status || "")
+          .trim()
+          .toLowerCase();
+        const displayStatus =
+          normalizedStatus === "pending"
+            ? "Pending"
+            : normalizedStatus === "approved"
+              ? "Approved"
+              : normalizedStatus === "rejected"
+                ? "Rejected"
+                : "Pending";
 
-  const formattedQuote = scopedQuotes.map((q) => {
-    const normalizedStatus = String(q.status || "")
-      .trim()
-      .toLowerCase();
-    const displayStatus =
-      normalizedStatus === "pending"
-        ? "Pending"
-        : normalizedStatus === "approved"
-          ? "Approved"
-          : normalizedStatus === "rejected"
-            ? "Rejected"
-            : "Pending";
+        return {
+          _id: q._id,
+          clientId: q.clientId?._id ?? q.clientId,
+          clientName: q.clientId?.clientName ?? "N/A",
+          estimatedPrice: Number(q.estimatedPrice) || 0,
+          bidSheet: q.bidSheet,
+          bookedOnSpot: q.bookedOnSpot,
+          expiryDate: q.expiryDate,
+          notes: q.notes,
+          status: displayStatus,
+          createdAt: q.createdAt,
+          updatedAt: q.updatedAt,
+          customQuoteId: q.customQuoteId,
+        };
+      }),
+    [data?.data]
+  );
 
-    return {
-      _id: q._id,
-      clientId: q.clientId?._id ?? q.clientId,
-      clientName: q.clientId?.clientName ?? "N/A",
-      estimatedPrice: q.estimatedPrice,
-      bidSheet: q.bidSheet,
-      bookedOnSpot: q.bookedOnSpot,
-      expiryDate: new Date(q.expiryDate).toLocaleDateString(),
-      notes: q.notes,
-      status: displayStatus,
-      createdAt: new Date(q.createdAt).toLocaleDateString(),
-      updatedAt: new Date(q.updatedAt).toLocaleDateString(),
-      customQuoteId: q.customQuoteId,
-    };
-  });
+  const filteredQuotes = useMemo(() => {
+    const searchValue = params.search.trim().toLowerCase();
+
+    return normalizedQuotes.filter((quote) => {
+      const matchesSearch =
+        !searchValue ||
+        [
+          quote.clientName,
+          quote.customQuoteId,
+          quote.status,
+          String(quote.estimatedPrice),
+        ].some((value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(searchValue)
+        );
+
+      return matchesSearch;
+    });
+  }, [normalizedQuotes, params.search]);
+
+  const sortedQuotes = useMemo(() => {
+    const items = [...filteredQuotes];
+
+    items.sort((a, b) => {
+      const aValue = a?.[params.sortKey];
+      const bValue = b?.[params.sortKey];
+
+      if (params.sortKey === "createdAt") {
+        return new Date(aValue || 0).getTime() - new Date(bValue || 0).getTime();
+      }
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return aValue - bValue;
+      }
+
+      return String(aValue || "").localeCompare(String(bValue || ""));
+    });
+
+    return params.sortOrder === "desc" ? items.reverse() : items;
+  }, [filteredQuotes, params.sortKey, params.sortOrder]);
+
+  const totalItems = sortedQuotes.length;
+  const pagedQuotes = useMemo(() => {
+    const start = (params.page - 1) * params.limit;
+    return sortedQuotes.slice(start, start + params.limit);
+  }, [sortedQuotes, params.page, params.limit]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalItems / params.limit));
+    if (params.page > totalPages) {
+      setParams((prev) => ({ ...prev, page: totalPages }));
+    }
+  }, [params.limit, params.page, totalItems]);
+
+  const formattedQuote = pagedQuotes.map((q) => ({
+    ...q,
+    expiryDate: q.expiryDate ? new Date(q.expiryDate).toLocaleDateString() : "—",
+    createdAt: q.createdAt ? new Date(q.createdAt).toLocaleDateString() : "—",
+    updatedAt: q.updatedAt ? new Date(q.updatedAt).toLocaleDateString() : "—",
+  }));
 
   const tableConfig = {
     columns: [
@@ -173,6 +226,7 @@ function QuotesList({ salesRepId, canDelete = false } = {}) {
     itemsPerPage: params.limit,
     sortKey: params.sortKey,
     sortOrder: params.sortOrder,
+    searchValue: params.search,
     onPageChange: (page) => setParams((p) => ({ ...p, page })),
     onSearch: (search) => setParams((p) => ({ ...p, search, page: 1 })),
     onFilterChange: (key, value) =>

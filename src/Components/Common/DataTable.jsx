@@ -37,6 +37,7 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
     actions = [],
     filters = [],
     showSearch,
+    searchValue = "",
     showPagination = true,
     showMobileSort = true,
 
@@ -92,6 +93,7 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
           {shouldShowSearch && (
             <input
               type="text"
+              value={searchValue}
               placeholder="Search..."
               onChange={(e) => onSearch?.(e.target.value)}
               className="w-full sm:w-64 px-3 py-2 border rounded-lg text-sm sm:text-base"
