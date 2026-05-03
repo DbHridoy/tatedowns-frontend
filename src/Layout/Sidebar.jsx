@@ -75,6 +75,12 @@ export const menuConfig = {
       label: "My Jobs",
       Link: "/production-manager/my-jobs",
     },
+    {
+      icon: <FiCalendar className="w-5 h-5" />,
+      label: "Scheduled Jobs",
+      Link: "/production-manager/scheduled-jobs",
+      separated: true,
+    },
     // {
     //   icon: <CiHome className="w-5 h-5" />,
     //   label: "Reports",
@@ -107,6 +113,12 @@ export const menuConfig = {
       icon: <FiBriefcase className="w-5 h-5" />,
       label: "Jobs",
       Link: "/admin/jobs",
+    },
+    {
+      icon: <FiCalendar className="w-5 h-5" />,
+      label: "Scheduled Jobs",
+      Link: "/admin/scheduled-jobs",
+      separated: true,
     },
     {
       icon: <FiCheckSquare className="w-5 h-5" />,
@@ -146,7 +158,7 @@ const Sidebar = ({ activeLabel, setActiveLabel, onClose }) => {
   const handleLogout = async () => {
     try {
       await logoutMutation().unwrap();
-    } catch (err) {
+    } catch {
       // ignore backend error
     } finally {
       dispatch(logout());
@@ -167,6 +179,8 @@ const Sidebar = ({ activeLabel, setActiveLabel, onClose }) => {
             key={item.label}
             to={item.Link}
             className={`flex items-center gap-3 px-5 py-2 cursor-pointer transition-all rounded-lg ${
+              item.separated ? "mt-4 pt-4 border-t border-gray-200" : ""
+            } ${
               activeLabel === item.label
                 ? "bg-[#007CCD] text-white font-semibold"
                 : "text-black hover:bg-gray-100"

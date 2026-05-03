@@ -45,10 +45,12 @@ import Settings from "../Pages/Common/ProductionSettings";
 import AddClient from "../Pages/Common/AddClient";
 import ProductionManagerReports from "../Pages/Production-Manager/Reports/ProductionManagerReports";
 import MyJobs from "../Pages/Production-Manager/MyJobs/PmJobs";
+import PmScheduledJobs from "../Pages/Production-Manager/MyJobs/PmScheduledJobs";
 import AdminClientDetails from "../Pages/Admin/Clients/AdminClientDetails";
 import AdminQuote from "../Pages/Admin/Quotes/AdminQuote";
 import AdminQuoteDetails from "../Pages/Admin/Quotes/AdminQuoteDetails";
 import AdminJobs from "../Pages/Admin/Jobs/AdminJobs";
+import AdminScheduledJobs from "../Pages/Admin/Jobs/AdminScheduledJobs";
 import AdminJobDetailsPage from "../Pages/Admin/Jobs/AdminJobDetailsPage";
 import ViewUser from "../Pages/Admin/UserManagement/ViewUser";
 import PmJobDetailsPage from "../Pages/Production-Manager/MyJobs/PmJobDetailsPage";
@@ -116,6 +118,7 @@ export const router = createBrowserRouter([
           { path: "home", element: <ProductionHome /> }, // matches menuConfig
           { path: "jobs", element: <JobScheduling /> },
           { path: "jobs/:jobId", element: <PmJobDetailsPage /> },
+          { path: "scheduled-jobs", element: <PmScheduledJobs /> },
           { path: "my-jobs", element: <MyJobs /> },
           {
             path: "my-jobs/:jobId",
@@ -147,6 +150,7 @@ export const router = createBrowserRouter([
           { path: "quotes/:quoteId", element: <AdminQuoteDetails /> },
           { path: "jobs", element: <AdminJobs /> },
           { path: "jobs/:jobId", element: <AdminJobDetailsPage /> },
+          { path: "scheduled-jobs", element: <AdminScheduledJobs /> },
           { path: "approvals-center", element: <Approvals /> },
           { path: "mileage/:mileageId", element: <MileageDetails /> },
           { path: "reports", element: <Reports /> },
