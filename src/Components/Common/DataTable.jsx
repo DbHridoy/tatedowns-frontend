@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SimpleLoader from "./SimpleLoader";
 
 const Modal = ({ show, title, message, onCancel, onConfirm }) => {
@@ -58,6 +58,7 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
     item: null,
     action: null,
   });
+  const [localSearchValue, setLocalSearchValue] = useState(searchValue);
 
   const totalPages = Math.ceil((totalItems || 0) / (itemsPerPage || 1));
   const emptyMessage = config.emptyMessage || "No data found";
@@ -82,6 +83,22 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
 
   const shouldShowSearch = showSearch ?? Boolean(onSearch);
 
+  useEffect(() => {
+    setLocalSearchValue(searchValue);
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (!shouldShowSearch || !onSearch || localSearchValue === searchValue) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      onSearch(localSearchValue);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [localSearchValue, onSearch, searchValue, shouldShowSearch]);
+
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Header */}
@@ -92,10 +109,12 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
           </h2>
           {shouldShowSearch && (
             <input
-              type="text"
-              value={searchValue}
+              type="search"
+              value={localSearchValue}
               placeholder="Search..."
-              onChange={(e) => onSearch?.(e.target.value)}
+              autoComplete="off"
+              inputMode="search"
+              onChange={(e) => setLocalSearchValue(e.target.value)}
               className="w-full sm:w-64 px-3 py-2 border rounded-lg text-sm sm:text-base"
             />
           )}

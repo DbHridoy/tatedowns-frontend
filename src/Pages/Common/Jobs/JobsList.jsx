@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import DataTable from "../../../Components/Common/DataTable";
 import { useDeleteJobMutation, useGetAllJobsQuery } from "../../../redux/api/jobApi";
@@ -10,18 +10,52 @@ const SUPPORTED_SORT_KEYS = ["clientName", "price", "status", "createdAt", "star
 
 function JobsList({ showFilters = true, salesRepId, canDelete = false } = {}) {
   const navigate = useNavigate();
-  const [params, setParams] = useState({
-    page: 1,
-    limit: 10,
-    search: "",
-    sortKey: "createdAt",
-    sortOrder: "asc",
-    filters: {
-      salesRepId: "",
-      productionManagerId: "",
-      status: "",
-    },
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [params, setParams] = useState(() => {
+    const page = Number(searchParams.get("page") || 1);
+    const limit = Number(searchParams.get("limit") || 10);
+    const search = searchParams.get("search") || "";
+    const rawSortKey = searchParams.get("sortKey");
+    const sortOrder = searchParams.get("sortOrder") || "asc";
+    const selectedSalesRepId = searchParams.get("salesRepId") || "";
+    const productionManagerId = searchParams.get("productionManagerId") || "";
+    const status = searchParams.get("status") || "";
+    const sortKey = SUPPORTED_SORT_KEYS.includes(rawSortKey)
+      ? rawSortKey
+      : "createdAt";
+
+    return {
+      page: Number.isFinite(page) && page > 0 ? page : 1,
+      limit: Number.isFinite(limit) && limit > 0 ? limit : 10,
+      search,
+      sortKey,
+      sortOrder,
+      filters: {
+        salesRepId: selectedSalesRepId,
+        productionManagerId,
+        status,
+      },
+    };
   });
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    nextParams.set("page", String(params.page));
+    nextParams.set("limit", String(params.limit));
+    if (params.search) nextParams.set("search", params.search);
+    if (params.sortKey) nextParams.set("sortKey", params.sortKey);
+    if (params.sortOrder) nextParams.set("sortOrder", params.sortOrder);
+    if (params.filters?.salesRepId) {
+      nextParams.set("salesRepId", params.filters.salesRepId);
+    }
+    if (params.filters?.productionManagerId) {
+      nextParams.set("productionManagerId", params.filters.productionManagerId);
+    }
+    if (params.filters?.status) {
+      nextParams.set("status", params.filters.status);
+    }
+    setSearchParams(nextParams, { replace: true });
+  }, [params, setSearchParams]);
 
   const { data, isLoading } = useGetAllJobsQuery({
     page: 1,
