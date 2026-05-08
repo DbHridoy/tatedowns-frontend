@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   FiArrowLeft,
   FiChevronDown,
@@ -27,15 +27,12 @@ export default function JobOverview() {
   const [currentStatus, setCurrentStatus] = useState("");
   const [noteText, setNoteText] = useState("");
   const [file, setFile] = useState(null);
-  const [designNotes, setDesignNotes] = useState(
-    "This is a sample note, and should never act as part of..."
-  );
-
   const { data, isLoading } = useGetJobByIdQuery(id);
   const [changeStatus] = useUpdateJobMutation();
   const [createJobNote] = useAddNoteMutation();
 
   const job = data?.data;
+  const client = job?.quoteId?.clientId;
   const productionManagerId = job?.productionManagerId?._id ?? job?.productionManagerId;
   const canManageStatus = Boolean(productionManagerId && user?._id && productionManagerId === user._id);
   const statusOptions = useMemo(() => {
@@ -115,13 +112,31 @@ export default function JobOverview() {
               <div>
                 <p className="mb-1 text-xs text-gray-500">Client Name</p>
                 <p className="text-sm font-medium text-gray-900">
-                  {job?.quoteId?.clientId?.clientName}
+                  {client?.clientName}
                 </p>
               </div>
               <div>
-                <p className="mb-1 text-xs text-gray-500">Location</p>
+                <p className="mb-1 text-xs text-gray-500">Street Address</p>
                 <p className="text-sm font-medium text-gray-900">
-                  {job?.quoteId?.clientId?.address}
+                  {client?.address || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="mb-1 text-xs text-gray-500">City</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {client?.city || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="mb-1 text-xs text-gray-500">State</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {client?.state || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="mb-1 text-xs text-gray-500">Zip Code</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {client?.zipCode || "N/A"}
                 </p>
               </div>
               <div>

@@ -1,11 +1,10 @@
+import formatCurrency from "../../utils/formatCurrency";
 const InfoLine = ({ label, value }) => (
   <p className="text-sm sm:text-base">
     <span className="font-semibold">{label}:</span>{" "}
     {value !== undefined && value !== null && value !== "" ? value : "N/A"}
   </p>
 );
-
-import formatCurrency from "../../utils/formatCurrency";
 
 const InfoField = ({
   label,
@@ -314,7 +313,10 @@ const JobDetailsOverview = ({
             <InfoLine label="Partner" value={client?.partnerName} />
             <InfoLine label="Email" value={client?.email} />
             <InfoLine label="Phone" value={client?.phoneNumber} />
-            <InfoLine label="Address" value={client?.address} />
+            <InfoLine label="Street Address" value={client?.address} />
+            <InfoLine label="City" value={client?.city} />
+            <InfoLine label="State" value={client?.state} />
+            <InfoLine label="Zip Code" value={client?.zipCode} />
             <InfoLine label="Lead Source" value={client?.leadSource} />
             <InfoLine label="Lead Status" value={client?.leadStatus} />
             <InfoLine label="Rating" value={client?.rating} />
