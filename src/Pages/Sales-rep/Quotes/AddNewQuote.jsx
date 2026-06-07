@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useCreateQuoteMutation } from "../../../redux/api/quoteApi";
 import { useGetAllClientsQuery } from "../../../redux/api/clientApi";
 import { selectCurrentUser } from "../../../redux/slice/authSlice";
@@ -16,10 +16,17 @@ const AddNewQuote = () => {
   const [bidSheetError, setBidSheetError] = useState("");
 
   const currentUser = useSelector(selectCurrentUser);
-  const { data, isLoading } = useGetAllClientsQuery({ filters: { leadStatus: "Not quoted" } });
-  console.log(data);
-  const clients = data?.data || [];
-  console.log(clients);
+  const { data, isLoading } = useGetAllClientsQuery();
+  const clients = (data?.data || []).filter((client) => {
+    const assignedSalesRepId =
+      typeof client?.salesRepId === "string"
+        ? client.salesRepId
+        : client?.salesRepId?._id;
+    return (
+      client?.leadStatus === "Not quoted" &&
+      assignedSalesRepId === currentUser?._id
+    );
+  });
   const navigate = useNavigate();
 
   const [createQuote, { isLoading: isSubmitting, error }] =
@@ -52,11 +59,11 @@ const AddNewQuote = () => {
 
       // Redirect to Add Job if booked on spot
       if (bookedOnSpot === true) {
-        navigate(`/sales-rep/add-job?quoteId=${res.data._id}`);
+        navigate(`/sales-rep/jobs/add-job?quoteId=${res.data._id}`);
       } else {
         navigate(-1);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to create quote");
     }
   };
@@ -106,6 +113,7 @@ const AddNewQuote = () => {
             <input
               type="number"
               inputMode="decimal"
+              min="0"
               value={estimatedPrice}
               onChange={(e) =>
                 setEstimatedPrice(
@@ -137,7 +145,7 @@ const AddNewQuote = () => {
               Click to upload or drag and drop
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              PDF or image files (Max 10MB)
+              PDF or image files (Max 50MB)
             </p>
             {file && <p className="text-sm text-green-600 mt-2">{file.name}</p>}
           </label>
@@ -149,22 +157,26 @@ const AddNewQuote = () => {
         {/* Booked on the spot */}
         <div>
           <label className="block text-sm sm:text-base font-semibold mb-2">
-            Booked on the spot?
+            Booked on the spot? <RequiredMark />
           </label>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             <label className="flex items-center gap-2 text-sm sm:text-base">
               <input
                 type="radio"
+                name="bookedOnSpot"
                 checked={bookedOnSpot === true}
                 onChange={() => setBookedOnSpot(true)}
+                required
               />
               Yes
             </label>
             <label className="flex items-center gap-2 text-sm sm:text-base">
               <input
                 type="radio"
+                name="bookedOnSpot"
                 checked={bookedOnSpot === false}
                 onChange={() => setBookedOnSpot(false)}
+                required
               />
               No
             </label>
@@ -199,7 +211,7 @@ const AddNewQuote = () => {
             disabled={isSubmitting}
             className="w-full sm:flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm sm:text-base hover:bg-blue-700 disabled:opacity-60"
           >
-            {isSubmitting ? "Saving..." : "Save Quote"}
+            {isSubmitting ? "Creating Quote..." : "Create Quote"}
           </button>
         </div>
 

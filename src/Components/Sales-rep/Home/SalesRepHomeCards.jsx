@@ -16,7 +16,7 @@ function SalesRepHomeCards({ cards }) {
           <div className="text-center space-y-1">
             <p className="text-xs sm:text-sm text-gray-500">{card.title}</p>
             <p className="text-xl sm:text-2xl font-semibold text-gray-800">
-              {card.count}
+              {card.value}
             </p>
           </div>
         </div>

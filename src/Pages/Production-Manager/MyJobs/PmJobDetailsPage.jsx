@@ -10,6 +10,7 @@ import { useLocation, useParams } from "react-router-dom";
 import DesignConsultationCreate from "./DesignConsultation";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../../redux/slice/authSlice";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 const formatDateInput = (value) => {
   if (!value) return "";
@@ -19,9 +20,13 @@ const formatDateInput = (value) => {
 };
 
 const statusOptions = [
+  "Downpayment Pending",
+  "DC Pending",
+  "DC Awaiting Approval",
   "Ready to Schedule",
   "Scheduled and Open",
   "Pending Close",
+  "Closed",
   "Cancelled",
 ];
 
@@ -37,6 +42,7 @@ const PmJobDetailsPage = () => {
     title: "",
     status: "",
     startDate: "",
+    estimatedStartDate: "",
     price: 0,
     downPayment: 0,
     budgetSpent: 0,
@@ -54,6 +60,9 @@ const PmJobDetailsPage = () => {
     pathname.startsWith("/production-manager/jobs/") &&
     !pathname.includes("/production-manager/my-jobs/");
   const allowFullActions = !isJobsRoute;
+  const canCancelJob = !["Pending Close", "Closed", "Cancelled"].includes(
+    job?.status
+  );
   const statusOptionsForEdit = useMemo(
     () => [...new Set([formJob.status, ...statusOptions])].filter(Boolean),
     [formJob.status]
@@ -69,6 +78,7 @@ const PmJobDetailsPage = () => {
       title: job.title ?? "",
       status: job.status ?? "",
       startDate: formatDateInput(job.startDate),
+      estimatedStartDate: formatDateInput(job.estimatedStartDate),
       price: job.price ?? 0,
       downPayment: job.downPayment ?? 0,
       budgetSpent: job.budgetSpent ?? 0,
@@ -79,7 +89,7 @@ const PmJobDetailsPage = () => {
     });
   }, [job]);
 
-  if (isLoading) return <p className="p-6">Loading job details...</p>;
+  if (isLoading) return <SimpleLoader text="Loading job details..." />;
   if (isError || !job) return <p className="p-6 text-red-500">Job not found</p>;
 
   const handleCancel = () => {
@@ -87,6 +97,7 @@ const PmJobDetailsPage = () => {
       title: job.title ?? "",
       status: job.status ?? "",
       startDate: formatDateInput(job.startDate),
+      estimatedStartDate: formatDateInput(job.estimatedStartDate),
       price: job.price ?? 0,
       downPayment: job.downPayment ?? 0,
       budgetSpent: job.budgetSpent ?? 0,
@@ -109,6 +120,9 @@ const PmJobDetailsPage = () => {
         title: formJob.title,
         status: formJob.status,
         startDate: formJob.startDate ? new Date(formJob.startDate) : undefined,
+        estimatedStartDate: formJob.estimatedStartDate
+          ? new Date(formJob.estimatedStartDate)
+          : undefined,
         price: Number(formJob.price) || 0,
         downPayment: Number(formJob.downPayment) || 0,
         budgetSpent: Number(formJob.budgetSpent) || 0,
@@ -183,7 +197,7 @@ const PmJobDetailsPage = () => {
                 className="w-full sm:w-auto bg-green-500 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                 disabled={isSaving}
               >
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </button>
               {getStatusAction() && (
                 <button
@@ -191,16 +205,16 @@ const PmJobDetailsPage = () => {
                   className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                   disabled={isSaving}
                 >
-                  {getStatusAction().label}
+                  {isSaving ? "Updating..." : getStatusAction().label}
                 </button>
               )}
-              {job?.status !== "Cancelled" && (
+              {canCancelJob && (
                 <button
                   onClick={() => handleStatusUpdate("Cancelled")}
                   className="w-full sm:w-auto bg-gray-800 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                   disabled={isSaving}
                 >
-                  Mark as Cancelled
+                  {isSaving ? "Updating..." : "Mark as Cancelled"}
                 </button>
               )}
             </>
@@ -220,7 +234,7 @@ const PmJobDetailsPage = () => {
                   {getStatusAction().label}
                 </button>
               )}
-              {job?.status !== "Cancelled" && (
+              {canCancelJob && (
                 <button
                   onClick={() => handleStatusUpdate("Cancelled")}
                   className="w-full sm:w-auto bg-gray-800 text-white px-4 py-2 rounded-md text-sm sm:text-base"
@@ -237,7 +251,7 @@ const PmJobDetailsPage = () => {
               className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-md text-sm sm:text-base"
               disabled={isSaving}
             >
-              Mark as Scheduled and Open
+              {isSaving ? "Updating..." : "Mark as Scheduled and Open"}
             </button>
           )
         )}
@@ -253,26 +267,12 @@ const PmJobDetailsPage = () => {
         onFieldChange={(field, value) =>
           setFormJob((prev) => ({ ...prev, [field]: value }))
         }
+        showEstimatedStartDate
+        showProductionManager
+        jobIdPosition="afterStatus"
+        estimatedStartDatePosition="afterPrice"
         readOnlyFields={[
-          {
-            label: "Estimated Start Date",
-            value: job.estimatedStartDate
-              ? new Date(job.estimatedStartDate).toLocaleDateString()
-              : null,
-          },
-          { label: "Down Payment Status", value: job.downPaymentStatus },
           { label: "Estimated Gallons", value: job.estimatedGallons },
-        ]}
-        readOnlyFieldsPosition="afterStartDate"
-        readOnlyFieldKeys={[
-          "status",
-          "price",
-          "downPayment",
-          "budgetSpent",
-          "totalHours",
-          "setupCleanup",
-          "powerwash",
-          "laborHours",
         ]}
       />
 

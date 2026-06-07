@@ -33,6 +33,7 @@ const Dashboard = () => {
     date: leaderboardDate,
   });
   const stats = data?.data;
+  // console.log("stats", stats)
   const leaderBoard = leaderBoardData?.data || [];
   const leaderboardRows = leaderBoard.map((rep) => ({
     id: rep._id,
@@ -40,8 +41,8 @@ const Dashboard = () => {
     totalClients: rep.totalClients,
     totalQuotes: rep.totalQuotes,
     totalJobs: rep.totalJobs,
-    revenueEarned: rep.totalRevenueSold,
-    revenueProduced: rep.totalRevenueProduced,
+    totalRevenueSold: rep.totalRevenueSold,
+    totalRevenueProduced: rep.totalRevenueProduced,
   }));
   const sortedLeaderboardRows = useMemo(() => {
     if (!leaderboardSortKey) return leaderboardRows;
@@ -69,15 +70,50 @@ const Dashboard = () => {
       maximumFractionDigits: 0,
     }).format(amount);
   };
+  const baseColumns = [
+    { label: "No", accessor: "No" },
+    { label: "Name", accessor: "name", sortable: true },
+    {
+      label: "Total Revenue Sold",
+      accessor: "totalRevenueSold",
+      sortable: true,
+      format: (value) => formatCurrency(value),
+    },
+  ];
+  const optionalColumns = {
+    totalClients: { label: "Total Clients", accessor: "totalClients", sortable: true },
+    totalQuotes: { label: "Total Quotes", accessor: "totalQuotes", sortable: true },
+    totalJobs: { label: "Total Jobs", accessor: "totalJobs", sortable: true },
+    totalRevenueProduced: {
+      label: "Total Revenue Produced",
+      accessor: "totalRevenueProduced",
+      sortable: true,
+      format: (value) => formatCurrency(value),
+    },
+  };
+  const leaderboardColumns = [
+    ...baseColumns,
+    ...(leaderboardSortKey && optionalColumns[leaderboardSortKey]
+      ? [optionalColumns[leaderboardSortKey]]
+      : []),
+  ];
   const leaderboardConfig = {
-    columns: [
-      { label: "No", accessor: "No" },
-      { label: "Name", accessor: "name", sortable: true },
-      { label: "Total Clients", accessor: "totalClients", sortable: true },
-      { label: "Total Quotes", accessor: "totalQuotes", sortable: true },
-      { label: "Total Jobs", accessor: "totalJobs", sortable: true },
-      { label: "Revenue Earned", accessor: "revenueEarned", sortable: true },
-      { label: "Revenue Produced", accessor: "revenueProduced", sortable: true },
+    columns: leaderboardColumns,
+    showMobileSort: false,
+    filters: [
+      {
+        label: "Sort By",
+        accessor: "leaderboardSort",
+        value: leaderboardSortKey || "",
+        options: {
+          Name: "name",
+          "Total Clients": "totalClients",
+          "Total Quotes": "totalQuotes",
+          "Total Jobs": "totalJobs",
+          "Total Revenue Sold": "totalRevenueSold",
+          "Total Revenue Produced": "totalRevenueProduced",
+        },
+      },
     ],
     totalItems: sortedLeaderboardRows.length,
     currentPage: 1,
@@ -94,12 +130,20 @@ const Dashboard = () => {
       setLeaderboardSortKey(sortKey);
       setLeaderboardSortOrder("asc");
     },
+    onFilterChange: (key, value) => {
+      if (key !== "leaderboardSort") return;
+      setLeaderboardSortKey(value);
+      setLeaderboardSortOrder("asc");
+    },
   };
 
   return (
     <div className="page-container space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div className="text-sm text-gray-500">Filter stats by period</div>
+        <div className="text-sm ">
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-gray-500">Filter stats by period</p>
+        </div>
         <PeriodFilter
           periodType={statsPeriodType}
           dateValue={statsDateInput}
@@ -128,12 +172,8 @@ const Dashboard = () => {
       </div>
       <DataTable
         title=""
-        data={sortedLeaderboardRows.map((row) => ({
-          ...row,
-          revenueEarned: formatCurrency(row.revenueEarned),
-          revenueProduced: formatCurrency(row.revenueProduced),
-        }))}
-        config={{ ...leaderboardConfig, showSearch: false, filters: [] }}
+        data={sortedLeaderboardRows}
+        config={{ ...leaderboardConfig, showSearch: false, showPagination: false }}
       />
       <PipelineOverview />
       {/* <PendingApprovals/> */}

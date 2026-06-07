@@ -30,7 +30,7 @@ function Pipeline({ data }) {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="count" fill="#8884d8" />
+            <Bar dataKey="value" fill="#8884d8" />
           </BarChart>
         </ResponsiveContainer>
       </div>

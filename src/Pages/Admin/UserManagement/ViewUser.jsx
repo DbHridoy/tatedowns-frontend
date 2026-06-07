@@ -15,6 +15,7 @@ import {
   useDeletePaymentMutation,
 } from "../../../redux/api/common";
 import toast from "react-hot-toast";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 const emptyForm = {
   fullName: "",
@@ -209,7 +210,7 @@ const ViewUser = () => {
     });
 
   if (isLoading) {
-    return <div className="p-6">Loading user...</div>;
+    return <SimpleLoader text="Loading user..." />;
   }
 
   if (!user) {
@@ -339,9 +340,7 @@ const ViewUser = () => {
           />
         </div>
         {isStatsLoading ? (
-          <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-            Loading stats...
-          </div>
+          <SimpleLoader text="Loading stats..." className="min-h-[120px]" />
         ) : stats.length === 0 ? (
           <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
             No stats available for this role yet.
@@ -383,9 +382,7 @@ const ViewUser = () => {
           </div>
           <div className="mt-4">
             {isPaymentsLoading ? (
-              <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                Loading payments...
-              </div>
+              <SimpleLoader text="Loading payments..." className="min-h-[120px]" />
             ) : payments.length === 0 ? (
               <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
                 No payments yet.

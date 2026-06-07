@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import SimpleLoader from "./SimpleLoader";
 
 const Modal = ({ show, title, message, onCancel, onConfirm }) => {
   if (!show) return null;
@@ -29,13 +30,16 @@ const Modal = ({ show, title, message, onCancel, onConfirm }) => {
   );
 };
 
-const DataTable = ({ title, data = [], config = {} }) => {
+const DataTable = ({ title, data = [], config = {}, loading = false }) => {
   //console.log(data);
   const {
     columns = [],
     actions = [],
     filters = [],
     showSearch,
+    searchValue = "",
+    showPagination = true,
+    showMobileSort = true,
 
     // server controlled
     currentPage,
@@ -54,8 +58,9 @@ const DataTable = ({ title, data = [], config = {} }) => {
     item: null,
     action: null,
   });
+  const [localSearchValue, setLocalSearchValue] = useState(searchValue);
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.ceil((totalItems || 0) / (itemsPerPage || 1));
   const emptyMessage = config.emptyMessage || "No data found";
   const sortableColumns = columns.filter((col) => col.sortable);
   const handleSort = (col) => {
@@ -78,6 +83,22 @@ const DataTable = ({ title, data = [], config = {} }) => {
 
   const shouldShowSearch = showSearch ?? Boolean(onSearch);
 
+  useEffect(() => {
+    setLocalSearchValue(searchValue);
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (!shouldShowSearch || !onSearch || localSearchValue === searchValue) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      onSearch(localSearchValue);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [localSearchValue, onSearch, searchValue, shouldShowSearch]);
+
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Header */}
@@ -88,9 +109,12 @@ const DataTable = ({ title, data = [], config = {} }) => {
           </h2>
           {shouldShowSearch && (
             <input
-              type="text"
+              type="search"
+              value={localSearchValue}
               placeholder="Search..."
-              onChange={(e) => onSearch?.(e.target.value)}
+              autoComplete="off"
+              inputMode="search"
+              onChange={(e) => setLocalSearchValue(e.target.value)}
               className="w-full sm:w-64 px-3 py-2 border rounded-lg text-sm sm:text-base"
             />
           )}
@@ -103,6 +127,7 @@ const DataTable = ({ title, data = [], config = {} }) => {
           {filters.map((f) => (
             <select
               key={f.accessor}
+              value={f.value ?? ""}
               onChange={(e) => onFilterChange?.(f.accessor, e.target.value)}
               className="w-full sm:w-auto px-3 py-2 border rounded-lg text-sm sm:text-base"
             >
@@ -118,7 +143,9 @@ const DataTable = ({ title, data = [], config = {} }) => {
       )}
 
       {/* Table */}
-      {data.length === 0 ? (
+      {loading ? (
+        <SimpleLoader text="Loading data..." className="min-h-[280px] border-0" />
+      ) : data.length === 0 ? (
         <div className="flex justify-center items-center h-64">
           <p className="text-gray-500">{emptyMessage}</p>
         </div>
@@ -126,7 +153,7 @@ const DataTable = ({ title, data = [], config = {} }) => {
         <>
           {/* Mobile cards */}
           <div className="sm:hidden space-y-3 p-4">
-            {sortableColumns.length > 0 && (
+            {showMobileSort && sortableColumns.length > 0 && (
               <div className="flex items-center gap-3">
                 <select
                   value={sortKey || ""}
@@ -165,6 +192,9 @@ const DataTable = ({ title, data = [], config = {} }) => {
                 if (col.label === "Date" && value) {
                   return new Date(value).toLocaleDateString();
                 }
+                if (col.format) {
+                  return col.format(value, row);
+                }
                 return value;
               };
 
@@ -190,7 +220,7 @@ const DataTable = ({ title, data = [], config = {} }) => {
                               col.colorMap?.[value] || ""
                             }`}
                           >
-                            {value || "—"}
+                            {value ?? "—"}
                           </span>
                         </div>
                       );
@@ -207,18 +237,22 @@ const DataTable = ({ title, data = [], config = {} }) => {
                             : "grid-cols-3"
                       }`}
                     >
-                      {actions.map((action, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleAction(action, row)}
-                          className={`w-full ${
-                            action.className ||
-                            "px-2 py-1 text-sm sm:text-base bg-blue-500 text-white rounded"
-                          }`}
-                        >
-                          {action.label}
-                        </button>
-                      ))}
+                      {actions.map((action, i) => {
+                        const isDisabled = action.disabled?.(row);
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => handleAction(action, row)}
+                            disabled={isDisabled}
+                            className={`w-full ${
+                              action.className ||
+                              "px-2 py-1 text-sm sm:text-base bg-blue-500 text-white rounded"
+                            } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                          >
+                            {action.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -266,6 +300,9 @@ const DataTable = ({ title, data = [], config = {} }) => {
                       if (col.label === "Date" && value) {
                         value = new Date(value).toLocaleDateString();
                       }
+                      if (col.format) {
+                        value = col.format(value, row);
+                      }
 
                       return (
                         <td key={col.accessor}>
@@ -282,18 +319,22 @@ const DataTable = ({ title, data = [], config = {} }) => {
 
                     {actions.length > 0 && (
                       <td className="px-3 sm:px-4 py-3 flex flex-wrap justify-center items-center gap-2">
-                        {actions.map((action, i) => (
-                          <button
-                            key={i}
-                            onClick={() => handleAction(action, row)}
-                            className={
-                              action.className ||
-                              "px-2 py-1 text-sm sm:text-base bg-blue-500 text-white rounded"
-                            }
-                          >
-                            {action.label}
-                          </button>
-                        ))}
+                        {actions.map((action, i) => {
+                          const isDisabled = action.disabled?.(row);
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => handleAction(action, row)}
+                              disabled={isDisabled}
+                              className={`${
+                                action.className ||
+                                "px-2 py-1 text-sm sm:text-base bg-blue-500 text-white rounded"
+                              } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                            >
+                              {action.label}
+                            </button>
+                          );
+                        })}
                       </td>
                     )}
                   </tr>
@@ -305,28 +346,30 @@ const DataTable = ({ title, data = [], config = {} }) => {
       )}
 
       {/* Pagination */}
-      <div className="px-4 sm:px-6 py-4 border-t flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-        <span className="text-sm sm:text-base text-gray-600">
-          Page {currentPage} of {totalPages || 0}
-        </span>
+      {showPagination && !loading && (
+        <div className="px-4 sm:px-6 py-4 border-t flex flex-col items-center gap-3">
+          <span className="text-sm sm:text-base text-gray-600 text-center">
+            Page {currentPage} of {totalPages || 0}
+          </span>
 
-        <div className="flex w-full sm:w-auto gap-2 justify-between sm:justify-end">
-          <button
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-2 border rounded text-sm sm:text-base disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <button
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-3 py-2 border rounded text-sm sm:text-base disabled:opacity-50"
-          >
-            Next
-          </button>
+          <div className="flex items-center gap-2 justify-center">
+            <button
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-2 border rounded text-sm sm:text-base disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 border rounded text-sm sm:text-base disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modal */}
       <Modal

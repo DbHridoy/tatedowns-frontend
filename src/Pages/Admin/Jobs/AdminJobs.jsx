@@ -1,3 +1,5 @@
 import JobsList from "../../Common/Jobs/JobsList";
 
-export default JobsList;
+const AdminJobs = () => <JobsList canDelete />;
+
+export default AdminJobs;

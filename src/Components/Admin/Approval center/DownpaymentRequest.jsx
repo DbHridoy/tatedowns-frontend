@@ -1,23 +1,32 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   useGetAllJobsQuery,
   useUpdateJobMutation,
 } from "../../../redux/api/jobApi";
 import DataTable from "../../Common/DataTable";
+import formatCurrency from "../../../utils/formatCurrency";
 
 function DownpaymentRequest() {
+  const navigate = useNavigate();
   const [params, setParams] = useState({
     page: 1,
     limit: 10,
     search: "",
     sortKey: "",
     sortOrder: "asc",
-    filters: {downPaymentStatus:"Pending"},
+    filters: { status: "Downpayment Pending" },
   });
+  const sortValue = params.sortKey
+    ? `${params.sortOrder === "desc" ? "-" : ""}${params.sortKey}`
+    : "";
 
   // ✅ pass params to RTK Query
   const { data: downpaymentRequests, isLoading } =
-    useGetAllJobsQuery(params);
+    useGetAllJobsQuery({
+      ...params,
+      sort: sortValue,
+    });
 
   //console.log(downpaymentRequests);
 
@@ -29,17 +38,24 @@ function DownpaymentRequest() {
     id: item._id,
     clientName: item?.clientId?.clientName ?? "N/A",
     amount: item?.downPayment ?? 0,
-    status: item?.downPaymentStatus ?? "Pending",
+    status: item?.status ?? "Downpayment Pending",
   }));
   const [updateDownPaymentStatus] = useUpdateJobMutation();
   const tableConfig = {
     columns: [
       { label: "No", accessor: "No" },
       { label: "Client Name", accessor: "clientName", sortable: true },
-      { label: "Amount", accessor: "amount" },
+      { label: "Amount", accessor: "amount", format: formatCurrency },
       { label: "Status", accessor: "status" },
     ],
     actions: [
+      {
+        label: "View",
+        className: "bg-blue-500 text-white p-2 rounded-lg",
+        onClick: (item) => {
+          navigate(`/admin/jobs/${item.id}`);
+        },
+      },
       {
         label: "Accept",
         className: "bg-green-500 text-white p-2 rounded-lg",
@@ -51,7 +67,7 @@ function DownpaymentRequest() {
           //console.log("item",item)
           updateDownPaymentStatus({
             id: item.id,
-            data: { downPaymentStatus: "Approved" },
+            data: { status: "DC Pending" },
           });
         },
       },
@@ -65,7 +81,7 @@ function DownpaymentRequest() {
         onConfirm: (item) => {
           updateDownPaymentStatus({
             id: item.id,
-            data: { downPaymentStatus: "Rejected" },
+            data: { status: "Cancelled" },
           });
         },
       },
@@ -80,8 +96,12 @@ function DownpaymentRequest() {
 
     onSearch: (search) => setParams((p) => ({ ...p, search, page: 1 })),
 
-    onSortChange: (sortKey, sortOrder) =>
-      setParams((p) => ({ ...p, sortKey, sortOrder })),
+    onSortChange: (sortKey) =>
+      setParams((p) => {
+        const isSameKey = p.sortKey === sortKey;
+        const nextOrder = isSameKey && p.sortOrder === "asc" ? "desc" : "asc";
+        return { ...p, sortKey, sortOrder: nextOrder };
+      }),
   };
 
   return (

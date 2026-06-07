@@ -17,7 +17,7 @@ const Reports = () => {
   const [selectedId, setSelectedId] = useState(null);
   const navigate = useNavigate();
 
-  const { data: salesRepData } = useGetAllSalesRepQuery();
+  const { data: salesRepData, isLoading } = useGetAllSalesRepQuery();
   const salesRep = salesRepData?.data || {};
 
   const totalItems = salesRepData?.total || 0;
@@ -89,7 +89,12 @@ const Reports = () => {
           Sales representative performance overview
         </p>
       </div>
-      <DataTable title="Sales Reps" data={salesRep} config={tableConfig} />
+      <DataTable
+        title="Sales Reps"
+        data={salesRep}
+        config={tableConfig}
+        loading={isLoading}
+      />
     </div>
   );
 };

@@ -1,11 +1,12 @@
 import { useSelector } from "react-redux";
 import { Navigate, Outlet } from "react-router-dom";
+import SimpleLoader from "../Components/Common/SimpleLoader";
 
 const PublicRoute = ({ children }) => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   if (!isAuthenticated) return children || <Outlet />;
-  if (!user) return <div>Loading...</div>;
+  if (!user) return <SimpleLoader fullScreen />;
 
   // redirect authenticated users to their dashboard
   switch (user.role) {

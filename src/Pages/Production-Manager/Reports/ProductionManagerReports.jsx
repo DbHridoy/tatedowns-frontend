@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useGetMyStatsQuery } from "../../../redux/api/common";
 import PeriodFilter from "../../../Components/Common/PeriodFilter";
 import { getDefaultPeriodInput, normalizePeriodDate } from "../../../utils/period";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 /**
  * Single component that can render any set of stats.
@@ -12,7 +13,7 @@ export default function ProductionManagerReports() {
 
   const [periodType, setPeriodType] = useState("year");
   const [dateInput, setDateInput] = useState(getDefaultPeriodInput("year"));
-  const { data: myStats } = useGetMyStatsQuery({
+  const { data: myStats, isLoading } = useGetMyStatsQuery({
     periodType,
     date: normalizePeriodDate(periodType, dateInput),
   });
@@ -40,6 +41,10 @@ export default function ProductionManagerReports() {
 
     return `${item.prefix ?? ""}${formatted}${item.suffix ?? ""}`;
   };
+
+  if (isLoading) {
+    return <SimpleLoader text="Loading reports..." />;
+  }
 
   return (
     <div className="page-container space-y-6">

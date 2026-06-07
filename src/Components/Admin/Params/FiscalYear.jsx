@@ -4,6 +4,7 @@ import {
   useCreateFiscalYearMutation,
 } from "../../../redux/api/common";
 import toast from "react-hot-toast";
+import SimpleLoader from "../../Common/SimpleLoader";
 
 function FiscalYear() {
   const { data: fiscalYear, isLoading } = useGetFiscalYearQuery();
@@ -70,7 +71,7 @@ function FiscalYear() {
       year: "numeric",
     });
 
-  if (isLoading) return null;
+  if (isLoading) return <SimpleLoader className="min-h-[100px]" />;
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-sm">

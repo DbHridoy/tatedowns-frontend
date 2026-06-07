@@ -7,6 +7,7 @@ import {
 import DataTable from "../../../Components/Common/DataTable";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../../redux/slice/authSlice";
+import formatCurrency from "../../../utils/formatCurrency";
 
 function JobScheduling() {
   const navigate = useNavigate();
@@ -25,10 +26,16 @@ function JobScheduling() {
     filters: { status: "Ready to Schedule" },
   });
 
+  const sortValue = params.sortKey
+    ? `${params.sortOrder === "desc" ? "-" : ""}${params.sortKey}`
+    : "";
   // ✅ Hook at top level
-  const { data, isLoading } = useGetAllJobsQuery(params);
+  const { data, isLoading } = useGetAllJobsQuery({
+    ...params,
+    sort: sortValue,
+  });
 
-  const jobs = data?.data || [];
+  const jobs = (data?.data || []).filter((j) => j.status !== "DC Pending");
   const totalItems = data?.total || 0;
 
   // ✅ Safe formatting
@@ -73,7 +80,7 @@ console.log("line:52-me", me)
       { label: "No", accessor: "No" },
       { label: "Client Name", accessor: "clientName", sortable: true },
       // { label: "Job Title", accessor: "jobTitle" },
-      { label: "Estimated Price", accessor: "estimatedPrice" },
+      { label: "Estimated Price", accessor: "estimatedPrice", format: formatCurrency },
       { label: "Job Status", accessor: "jobStatus" },
       { label: "Estimated Start Date", accessor: "estimatedStartDate" },
     ],
@@ -98,8 +105,12 @@ console.log("line:52-me", me)
     sortOrder: params.sortOrder,
     onPageChange: (page) => setParams((p) => ({ ...p, page })),
     onSearch: (search) => setParams((p) => ({ ...p, search, page: 1 })),
-    onSortChange: (sortKey, sortOrder) =>
-      setParams((p) => ({ ...p, sortKey, sortOrder })),
+    onSortChange: (sortKey) =>
+      setParams((p) => {
+        const isSameKey = p.sortKey === sortKey;
+        const nextOrder = isSameKey && p.sortOrder === "asc" ? "desc" : "asc";
+        return { ...p, sortKey, sortOrder: nextOrder };
+      }),
   };
 
   return (
@@ -114,8 +125,12 @@ console.log("line:52-me", me)
         </p>
       </div>
 
-      <DataTable title="Jobs" data={formattedJobs} config={tableConfig} />
-
+      <DataTable
+        title="Jobs"
+        data={formattedJobs}
+        config={tableConfig}
+        loading={isLoading}
+      />
       {isScheduleModalOpen && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-[92vw] sm:w-full sm:max-w-md md:max-w-lg lg:max-w-xl">

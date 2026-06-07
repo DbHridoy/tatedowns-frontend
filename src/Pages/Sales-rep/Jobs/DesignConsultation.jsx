@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCreateDesignConsultationMutation } from "../../../redux/api/jobApi";
 import toast from "react-hot-toast";
@@ -18,7 +18,8 @@ const DesignConsultationCreate = ({
   onSaved,
   mode = "create",
 }) => {
-  const [createDesignConsultation] = useCreateDesignConsultationMutation();
+  const [createDesignConsultation, { isLoading: isSaving }] =
+    useCreateDesignConsultationMutation();
 
   const navigate = useNavigate();
   const { jobId } = useParams();
@@ -209,18 +210,23 @@ const DesignConsultationCreate = ({
           <label className="block text-sm font-medium text-gray-700">
             Upsell Value
           </label>
-          <input
-            type="number"
-            placeholder="Upsell Value"
-            value={upsellDetails.upsellValue}
-            onChange={(e) =>
-              setUpsellDetails({
-                ...upsellDetails,
-                upsellValue: e.target.value,
-              })
-            }
-            className="p-3 w-full border rounded-md text-sm sm:text-base"
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500">
+              $
+            </span>
+            <input
+              type="number"
+              placeholder="Upsell Value"
+              value={upsellDetails.upsellValue}
+              onChange={(e) =>
+                setUpsellDetails({
+                  ...upsellDetails,
+                  upsellValue: e.target.value,
+                })
+              }
+              className="p-3 w-full border rounded-md text-sm sm:text-base pl-7"
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
@@ -276,7 +282,7 @@ const DesignConsultationCreate = ({
         </label>
         <input
           type="file"
-          accept=".pdf,.docx,.xlsx"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
           className="w-full text-sm sm:text-base"
           onChange={handleFileChange}
           required={!existingFileUrl}
@@ -287,15 +293,23 @@ const DesignConsultationCreate = ({
         <button
           type="button"
           onClick={onCancel ? onCancel : () => navigate(-1)}
+          disabled={isSaving}
           className="w-full sm:w-auto bg-gray-400 px-6 py-2 rounded text-white text-sm sm:text-base"
         >
           Cancel
         </button>
         <button
           type="submit"
+          disabled={isSaving}
           className="w-full sm:w-auto bg-blue-600 px-6 py-2 rounded text-white text-sm sm:text-base"
         >
-          {mode === "edit" ? "Update DC" : "Create DC"}
+          {isSaving
+            ? mode === "edit"
+              ? "Updating DC..."
+              : "Creating DC..."
+            : mode === "edit"
+              ? "Update DC"
+              : "Create DC"}
         </button>
       </div>
       </form>

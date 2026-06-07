@@ -20,6 +20,7 @@ const formatCurrency = (value) => {
 };
 
 const CardData = ({ stats, isLoading, isError }) => {
+  // console.log("stats", stats)
   const data = [
     {
       title: "Revenue Produced",
@@ -27,11 +28,16 @@ const CardData = ({ stats, isLoading, isError }) => {
       icon: FiDollarSign,
     },
     {
-      title: "Total Revenue",
+      title: "Total Sold",
       value: formatCurrency(stats?.totalRevenue),
       icon: FiDollarSign,
     },
-    { title: "Total Clients", value: stats?.totalClients ?? 0, icon: FiUsers },
+    {
+      title: "Upsell Value",
+      value: formatCurrency(stats?.totalUpsell),
+      icon: FiDollarSign,
+    },
+    { title: "Total Leads", value: stats?.totalClients ?? 0, icon: FiUsers },
     { title: "Total Quotes", value: stats?.totalQuotes ?? 0, icon: FiFileText },
     { title: "Total Jobs", value: stats?.totalJobs ?? 0, icon: FiBriefcase },
     {

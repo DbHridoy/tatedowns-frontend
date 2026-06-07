@@ -2,21 +2,28 @@ import React from "react";
 import DataTable from "../../Common/DataTable";
 import { useGetAllJobsQuery, useUpdateJobMutation } from "../../../redux/api/jobApi";
 import { useState } from "react";
+import formatCurrency from "../../../utils/formatCurrency";
 
 function JobCloseRequests() {
   const [params, setParams] = useState({
     page: 1,
     limit: 10,
     search: "",
-    sortKey: "fullName",
+    sortKey: "",
     sortOrder: "asc",
     filters: { status: "Pending Close" },
   });
+  const sortValue = params.sortKey
+    ? `${params.sortOrder === "desc" ? "-" : ""}${params.sortKey}`
+    : "";
 
   const [changeJobStatus] = useUpdateJobMutation();
 
   const { data: getPendingMileageLogs, isLoading: isGetLoading } =
-    useGetAllJobsQuery(params);
+    useGetAllJobsQuery({
+      ...params,
+      sort: sortValue,
+    });
   //console.log(getPendingMileageLogs);
   const mileageData = getPendingMileageLogs?.data ?? [];
 
@@ -32,7 +39,7 @@ function JobCloseRequests() {
     columns: [
       { label: "No", accessor: "No" },
       { label: "Client Name", accessor: "clientName", sortable: true },
-      { label: "Total Amount", accessor: "totalAmount" },
+      { label: "Total Amount", accessor: "totalAmount", format: formatCurrency },
       { label: "Status", accessor: "status" },
     ],
     actions: [
@@ -70,8 +77,12 @@ function JobCloseRequests() {
         page: 1,
         filters: { ...p.filters, [key]: value },
       })),
-    onSortChange: (sortKey, sortOrder) =>
-      setParams((p) => ({ ...p, sortKey, sortOrder })),
+    onSortChange: (sortKey) =>
+      setParams((p) => {
+        const isSameKey = p.sortKey === sortKey;
+        const nextOrder = isSameKey && p.sortOrder === "asc" ? "desc" : "asc";
+        return { ...p, sortKey, sortOrder: nextOrder };
+      }),
   };
   return (
     <DataTable

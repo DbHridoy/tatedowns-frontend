@@ -3,12 +3,16 @@ import JobDetailsOverview from "../../../Components/Common/JobDetailsOverview";
 import DC from "../../../Components/Sales-rep/Jobs/DC";
 import { useEffect, useMemo, useState } from "react";
 import {
+  useDeleteJobMutation,
   useGetJobByIdQuery,
   useUpdateJobMutation,
 } from "../../../redux/api/jobApi";
 import { useGetAllUsersQuery } from "../../../redux/api/userApi";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import DesignConsultationCreate from "../../Sales-rep/Jobs/DesignConsultation";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
+import DeleteModal from "../../../Components/Common/DeleteModal";
+import toast from "react-hot-toast";
 
 const formatDateInput = (value) => {
   if (!value) return "";
@@ -18,9 +22,11 @@ const formatDateInput = (value) => {
 };
 
 const statusOptions = [
+  "Downpayment Pending",
+  "DC Pending",
+  "DC Awaiting Approval",
   "Ready to Schedule",
   "Scheduled and Open",
-  "Scheduled",
   "Pending Close",
   "Closed",
   "Cancelled",
@@ -28,8 +34,10 @@ const statusOptions = [
 
 const AdminJobDetailsPage = () => {
   const { jobId } = useParams();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showDcForm, setShowDcForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formJob, setFormJob] = useState({
     title: "",
     status: "",
@@ -37,7 +45,6 @@ const AdminJobDetailsPage = () => {
     estimatedStartDate: "",
     price: 0,
     downPayment: 0,
-    downPaymentStatus: "",
     budgetSpent: 0,
     totalHours: 0,
     setupCleanup: 0,
@@ -51,6 +58,7 @@ const AdminJobDetailsPage = () => {
 
   const { data, isLoading, isError } = useGetJobByIdQuery(jobId, { skip: !jobId });
   const [updateJob, { isLoading: isSaving }] = useUpdateJobMutation();
+  const [deleteJob, { isLoading: isDeleting }] = useDeleteJobMutation();
   const { data: salesRepsData } = useGetAllUsersQuery({
     page: 1,
     limit: 0,
@@ -79,7 +87,6 @@ const AdminJobDetailsPage = () => {
       estimatedStartDate: formatDateInput(job.estimatedStartDate),
       price: job.price ?? 0,
       downPayment: job.downPayment ?? 0,
-      downPaymentStatus: job.downPaymentStatus ?? "",
       budgetSpent: job.budgetSpent ?? 0,
       totalHours: job.totalHours ?? 0,
       setupCleanup: job.setupCleanup ?? 0,
@@ -99,7 +106,7 @@ const AdminJobDetailsPage = () => {
     setIsEditingAssignment(false);
   }, [job]);
 
-  if (isLoading) return <p className="p-6">Loading job details...</p>;
+  if (isLoading) return <SimpleLoader text="Loading job details..." />;
   if (isError || !job) return <p className="p-6 text-red-500">Job not found</p>;
 
   const handleCancel = () => {
@@ -110,7 +117,6 @@ const AdminJobDetailsPage = () => {
       estimatedStartDate: formatDateInput(job.estimatedStartDate),
       price: job.price ?? 0,
       downPayment: job.downPayment ?? 0,
-      downPaymentStatus: job.downPaymentStatus ?? "",
       budgetSpent: job.budgetSpent ?? 0,
       totalHours: job.totalHours ?? 0,
       setupCleanup: job.setupCleanup ?? 0,
@@ -185,10 +191,52 @@ const AdminJobDetailsPage = () => {
     setIsEditing(false);
   };
 
+  const handleDelete = async () => {
+    if (!jobId) return;
+
+    try {
+      await deleteJob(jobId).unwrap();
+      toast.success("Job deleted successfully");
+      navigate("/admin/jobs");
+    } catch {
+      toast.error("Failed to delete job");
+    }
+  };
+
   return (
     <div className="page-container space-y-6">
       {/* Edit/Save Buttons */}
-      <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+      <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          {job?.status === "Downpayment Pending" && (
+            <button
+              onClick={() =>
+                updateJob({
+                  id: jobId,
+                  data: { status: "DC Pending" },
+                })
+              }
+              className="bg-green-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
+              disabled={isSaving}
+            >
+              {isSaving ? "Updating..." : "Approve Down Payment"}
+            </button>
+          )}
+          {job?.status === "DC Awaiting Approval" && (
+            <button
+              onClick={() =>
+                updateJob({
+                  id: jobId,
+                  data: { status: "Ready to Schedule" },
+                })
+              }
+              className="bg-green-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
+              disabled={isSaving}
+            >
+              {isSaving ? "Updating..." : "Approve DC"}
+            </button>
+          )}
+        </div>
         {isEditing ? (
           <>
             <button
@@ -203,16 +251,25 @@ const AdminJobDetailsPage = () => {
               className="bg-green-500 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
               disabled={isSaving}
             >
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm sm:text-base"
-          >
-            Edit
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm sm:text-base"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              disabled={isDeleting}
+              className="bg-red-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
         )}
       </div>
       {/* Job Header */}
@@ -229,8 +286,9 @@ const AdminJobDetailsPage = () => {
           setFormJob((prev) => ({ ...prev, [field]: value }))
         }
         showEstimatedStartDate
-        showDownPaymentStatus
         showProductionManager
+        jobIdPosition="afterStatus"
+        estimatedStartDatePosition="afterPrice"
         readOnlyFields={[
           { label: "Estimated Gallons", value: job.estimatedGallons },
         ]}
@@ -267,7 +325,7 @@ const AdminJobDetailsPage = () => {
                 className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                 disabled={isSaving}
               >
-                Save Assignment
+                {isSaving ? "Saving Assignment..." : "Save Assignment"}
               </button>
             </div>
           ) : (
@@ -337,6 +395,12 @@ const AdminJobDetailsPage = () => {
 
       {/* Notes Section */}
       <SharedNotes notes={job.notes} />
+
+      <DeleteModal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

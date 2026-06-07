@@ -6,12 +6,42 @@ import { FiArrowLeft, FiMenu, FiX } from "react-icons/fi";
 import Topbar from "./Topbar";
 import Sidebar from "./Sidebar";
 import { menuConfig } from "./Sidebar";
-import SalesRepTopbar from "./SalesRepTopbar";
 import { useSelector } from "react-redux";
 import { selectUserRole } from "../redux/slice/authSlice";
 import { useLocation, useNavigate } from "react-router-dom";
 import FAB from "../Components/Common/FAB";
 import { Toaster } from "react-hot-toast";
+
+const getMenuLinks = (role) => menuConfig?.[role] || [];
+const getDefaultLabel = (role) => {
+  switch (role) {
+    case "Admin":
+      return "Dashboard";
+    case "Production Manager":
+      return "Home";
+    case "Sales Rep":
+      return "Home";
+    default:
+      return "Dashboard";
+  }
+};
+
+const getActiveLabelFromPath = (role, pathname) => {
+  const menuItems = getMenuLinks(role);
+  const normalizedPath = pathname.replace(/\/+$/, "");
+  let bestMatch = null;
+
+  menuItems.forEach((item) => {
+    const link = item.Link.replace(/\/+$/, "");
+    if (normalizedPath === link || normalizedPath.startsWith(`${link}/`)) {
+      if (!bestMatch || link.length > bestMatch.link.length) {
+        bestMatch = { label: item.label, link };
+      }
+    }
+  });
+
+  return bestMatch?.label || getDefaultLabel(role);
+};
 
 const MainLayout = () => {
   const role = useSelector(selectUserRole);
@@ -19,37 +49,7 @@ const MainLayout = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
-  const getDefaultLabel = (role) => {
-    switch (role) {
-      case "Admin":
-        return "Dashboard";
-      case "Production Manager":
-        return "Home";
-      case "Sales Rep":
-        return "Home";
-      default:
-        return "Dashboard";
-    }
-  };
-
   const [activeLabel, setActiveLabel] = useState(getDefaultLabel(role));
-
-  const getActiveLabelFromPath = (role, pathname) => {
-    const menuItems = menuConfig?.[role] || [];
-    const normalizedPath = pathname.replace(/\/+$/, "");
-    let bestMatch = null;
-
-    menuItems.forEach((item) => {
-      const link = item.Link.replace(/\/+$/, "");
-      if (normalizedPath === link || normalizedPath.startsWith(`${link}/`)) {
-        if (!bestMatch || link.length > bestMatch.link.length) {
-          bestMatch = { label: item.label, link };
-        }
-      }
-    });
-
-    return bestMatch?.label || getDefaultLabel(role);
-  };
 
   useEffect(() => {
     setActiveLabel(getActiveLabelFromPath(role, location.pathname));
@@ -75,7 +75,7 @@ const MainLayout = () => {
     navigate(getParentPath(location.pathname), { replace: true });
   };
 
-  const sidebarLinks = (menuConfig?.[role] || []).map((item) => item.Link);
+  const sidebarLinks = getMenuLinks(role).map((item) => item.Link);
   const normalizedPathname = location.pathname.replace(/\/+$/, "");
   const shouldShowBackButton = !sidebarLinks.includes(normalizedPathname);
 
@@ -116,7 +116,7 @@ const MainLayout = () => {
 
           {/* Topbar */}
           <div className="flex-1">
-            <Topbar label={activeLabel} />
+            <Topbar label={activeLabel} showLabel={false} />
           </div>
         </header>
 
