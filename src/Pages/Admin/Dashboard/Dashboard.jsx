@@ -33,6 +33,7 @@ const Dashboard = () => {
     date: leaderboardDate,
   });
   const stats = data?.data;
+  // console.log("stats", stats)
   const leaderBoard = leaderBoardData?.data || [];
   const leaderboardRows = leaderBoard.map((rep) => ({
     id: rep._id,
