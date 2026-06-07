@@ -2,7 +2,12 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slice/authSlice.js";
 import { baseApi } from "./baseApi.js";
-import storage from 'redux-persist/lib/storage'
+// Custom storage wrapper to avoid redux-persist CJS/ESM interop issues with Vite
+const storage = {
+  getItem: (key) => Promise.resolve(window.localStorage.getItem(key)),
+  setItem: (key, item) => Promise.resolve(window.localStorage.setItem(key, item)),
+  removeItem: (key) => Promise.resolve(window.localStorage.removeItem(key)),
+};
 
 import {
   FLUSH,
