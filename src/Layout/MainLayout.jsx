@@ -5,22 +5,25 @@ import { FiArrowLeft, FiMenu, FiX } from "react-icons/fi";
 
 import Topbar from "./Topbar";
 import Sidebar from "./Sidebar";
-import { menuConfig } from "./Sidebar";
 import { useSelector } from "react-redux";
 import { selectUserRole } from "../redux/slice/authSlice";
 import { useLocation, useNavigate } from "react-router-dom";
 import FAB from "../Components/Common/FAB";
 import { Toaster } from "react-hot-toast";
+import { APP_ROLES } from "../constants/roles";
+import { menuConfig } from "./menuConfig.jsx";
 
 const getMenuLinks = (role) => menuConfig?.[role] || [];
 const getDefaultLabel = (role) => {
   switch (role) {
-    case "Admin":
+    case APP_ROLES.ADMIN:
       return "Dashboard";
-    case "Production Manager":
+    case APP_ROLES.PRODUCTION_MANAGER:
       return "Home";
-    case "Sales Rep":
+    case APP_ROLES.SALES_REP:
       return "Home";
+    case APP_ROLES.PAINTER:
+      return "Dashboard";
     default:
       return "Dashboard";
   }
@@ -137,7 +140,7 @@ const MainLayout = () => {
           <Outlet />
 
           {/* Floating Action Button */}
-          {role !== "Production Manager" && <FAB />}
+          {role !== APP_ROLES.PRODUCTION_MANAGER && role !== APP_ROLES.PAINTER && <FAB />}
           {/* <FAB/> */}
         </main>
       </div>

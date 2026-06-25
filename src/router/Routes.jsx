@@ -36,8 +36,14 @@ import SalesReports from "../Pages/Sales-rep/Reports/SalesRepReports";
 
 // Production Manager Pages
 import ProductionHome from "../Pages/Production-Manager/ProductionHome/ProductionHome";
-import JobScheduling from "../Pages/Production-Manager/JobScheduling/JobScheduling";
 import ProductionSettings from "../Pages/Common/ProductionSettings";
+import ProductionCalendarPage from "../Pages/Production/ProductionCalendarPage";
+import CrewManagementPage from "../Pages/Production/CrewManagementPage";
+import PainterManagementPage from "../Pages/Production/PainterManagementPage";
+import PainterDashboardPage from "../Pages/Painter/PainterDashboardPage";
+import PainterCrewPage from "../Pages/Painter/PainterCrewPage";
+import PainterSchedulePage from "../Pages/Painter/PainterSchedulePage";
+import JobScheduling from "../Pages/Production-Manager/JobScheduling/JobScheduling"
 
 // Common
 import GlobalNoRoute from "../Pages/Common/GlobalNoRoute";
@@ -106,6 +112,24 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // Shared production routes
+  {
+    path: "/production",
+    element: <RoleGuard allowedRole={["Admin", "Production Manager"]} />,
+    children: [
+      {
+        element: <MainLayout />,
+        children: [
+          { index: true, element: <Navigate to="calendar" replace /> },
+          { path: "calendar", element: <ProductionCalendarPage /> },
+          { path: "crews", element: <CrewManagementPage /> },
+          { path: "painters", element: <PainterManagementPage /> },
+          { path: "*", element: <GlobalNoRoute /> },
+        ],
+      },
+    ],
+  },
+
   // Production Manager Routes
   {
     path: "/production-manager",
@@ -116,7 +140,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="home" replace /> },
           { path: "home", element: <ProductionHome /> }, // matches menuConfig
-          { path: "jobs", element: <JobScheduling /> },
+          { path: "jobs", element: <Navigate to="/production/calendar" replace /> },
+          { path: "jobss", element: <JobScheduling /> },
           { path: "jobs/:jobId", element: <PmJobDetailsPage /> },
           { path: "scheduled-jobs", element: <PmScheduledJobs /> },
           { path: "my-jobs", element: <MyJobs /> },
@@ -126,6 +151,25 @@ export const router = createBrowserRouter([
           },
           { path: "reports", element: <ProductionManagerReports /> },
           { path: "settings", element: <ProductionSettings /> }, // matches menuConfig
+          { path: "*", element: <GlobalNoRoute /> },
+        ],
+      },
+    ],
+  },
+
+  // Painter Routes
+  {
+    path: "/painter",
+    element: <RoleGuard allowedRole="Painter" />,
+    children: [
+      {
+        element: <MainLayout />,
+        children: [
+          { index: true, element: <Navigate to="dashboard" replace /> },
+          { path: "dashboard", element: <PainterDashboardPage /> },
+          { path: "my-crew", element: <PainterCrewPage /> },
+          { path: "schedule", element: <PainterSchedulePage /> },
+          { path: "settings", element: <ProductionSettings /> },
           { path: "*", element: <GlobalNoRoute /> },
         ],
       },

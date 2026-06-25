@@ -2,6 +2,7 @@ import { useGetMeQuery } from "../redux/api/userApi";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUserRole } from "../redux/slice/authSlice";
+import { APP_ROLES } from "../constants/roles";
 
 const Topbar = ({ label, showLabel = true }) => {
   const navigate = useNavigate();
@@ -9,12 +10,14 @@ const Topbar = ({ label, showLabel = true }) => {
   const { data: profileData } = useGetMeQuery();
   const profile = profileData?.data;
   const profilePath =
-    role === "Admin"
+    role === APP_ROLES.ADMIN
       ? "/admin/settings"
-      : role === "Production Manager"
+      : role === APP_ROLES.PRODUCTION_MANAGER
         ? "/production-manager/settings"
-        : role === "Sales Rep"
+        : role === APP_ROLES.SALES_REP
           ? "/sales-rep/settings"
+          : role === APP_ROLES.PAINTER
+            ? "/painter/settings"
           : "/";
   //console.log("Profile data:", profile);
   return (
