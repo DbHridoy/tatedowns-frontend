@@ -1,24 +1,74 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
-import ScheduleItemCard from "../../Components/Production/ScheduleItemCard";
+import ProductionCalendarGrid from "../../Components/Production/ProductionCalendarGrid";
+import ProductionCalendarToolbar from "../../Components/Production/ProductionCalendarToolbar";
+import ProductionDayModal from "../../Components/Production/ProductionDayModal";
 import {
   useGetPainterOwnScheduleQuery,
   useUpdateScheduleStatusMutation,
 } from "../../redux/api/productionApi";
 import { CALENDAR_VIEW_MODES } from "../../constants/production";
 import {
+  addDays,
+  buildCalendarSections,
   formatDateKey,
-  getCalendarRange,
+  groupScheduleItemsByDay,
   normalizeProductionCalendarResponse,
 } from "../../utils/productionCalendar";
 
+const shiftReferenceDate = (viewMode, referenceDate, direction) => {
+  if (viewMode === CALENDAR_VIEW_MODES.DAY) {
+    return addDays(referenceDate, direction);
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.WEEK) {
+    return addDays(referenceDate, direction * 7);
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.MONTH) {
+    return new Date(referenceDate.getFullYear(), referenceDate.getMonth() + direction, 1);
+  }
+
+  return new Date(referenceDate.getFullYear() + direction, 0, 1);
+};
+
 const PainterSchedulePage = () => {
-  const range = getCalendarRange(CALENDAR_VIEW_MODES.MONTH, new Date());
-  const { data, isLoading } = useGetPainterOwnScheduleQuery({
-    viewMode: CALENDAR_VIEW_MODES.MONTH,
-    startDate: formatDateKey(range.startDate),
-    endDate: formatDateKey(range.endDate),
+  const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.WEEK);
+  const [referenceDate, setReferenceDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  const calendarSections = useMemo(
+    () => buildCalendarSections(viewMode, referenceDate),
+    [referenceDate, viewMode]
+  );
+  const calendarDays = useMemo(
+    () => calendarSections.flatMap((section) => section.days),
+    [calendarSections]
+  );
+  const visibleRange = useMemo(() => {
+    if (!calendarDays.length) {
+      return {
+        startDate: new Date(),
+        endDate: new Date(),
+      };
+    }
+
+    return {
+      startDate: calendarDays[0].date,
+      endDate: calendarDays[calendarDays.length - 1].date,
+    };
+  }, [calendarDays]);
+
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetPainterOwnScheduleQuery({
+    viewMode,
+    startDate: formatDateKey(visibleRange.startDate),
+    endDate: formatDateKey(visibleRange.endDate),
   });
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
 
@@ -26,19 +76,18 @@ const PainterSchedulePage = () => {
     () => normalizeProductionCalendarResponse(data).items,
     [data]
   );
-
-  const groupedItems = scheduleItems.reduce((groups, item) => {
-    const key = item.startDate?.slice(0, 10) || "unscheduled";
-    groups[key] = groups[key] || [];
-    groups[key].push(item);
-    return groups;
-  }, {});
+  const itemsByDay = useMemo(
+    () => groupScheduleItemsByDay(scheduleItems, calendarDays),
+    [calendarDays, scheduleItems]
+  );
+  const selectedDayItems = selectedDay?.key ? itemsByDay[selectedDay.key] || [] : [];
 
   const handleUpdateStatus = async (item, status) => {
     if (!item.canPainterUpdateStatus || item.status === status) return;
 
     try {
       await updateScheduleStatus({ scheduleId: item._id, status }).unwrap();
+      await refetch();
       toast.success("Status updated.");
     } catch (error) {
       toast.error(error?.data?.message || "Unable to update status.");
@@ -46,53 +95,49 @@ const PainterSchedulePage = () => {
   };
 
   if (isLoading) {
-    return <SimpleLoader text="Loading schedule..." className="min-h-[300px]" />;
+    return <SimpleLoader text="Loading schedule..." className="min-h-[320px]" />;
   }
 
   return (
     <div className="page-container space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">My Schedule</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Upcoming work assignments, job site locations, and production status only.
-        </p>
-      </div>
+      <ProductionCalendarToolbar
+        title="My Schedule"
+        viewMode={viewMode}
+        referenceDate={referenceDate}
+        onViewModeChange={setViewMode}
+        onToday={() => setReferenceDate(new Date())}
+      />
 
-      {Object.keys(groupedItems).length ? (
-        <div className="space-y-5">
-          {Object.entries(groupedItems).map(([date, items]) => (
-            <section
-              key={date}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-            >
-              <h2 className="text-lg font-semibold text-slate-900">
-                {date === "unscheduled"
-                  ? "Date Pending"
-                  : new Date(date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-              </h2>
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                {items.map((item) => (
-                  <ScheduleItemCard
-                    key={item._id}
-                    item={item}
-                    canPainterUpdate
-                    onUpdateStatus={handleUpdateStatus}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+      {isError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+          Unable to load your schedule right now.
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
-          No schedule has been assigned yet.
-        </div>
+        <ProductionCalendarGrid
+          sections={calendarSections}
+          itemsByDay={itemsByDay}
+          canManage={false}
+          onDateClick={(day) => setSelectedDay(day)}
+          viewMode={viewMode}
+          referenceDate={referenceDate}
+          onPrevious={() =>
+            setReferenceDate((current) => shiftReferenceDate(viewMode, current, -1))
+          }
+          onNext={() =>
+            setReferenceDate((current) => shiftReferenceDate(viewMode, current, 1))
+          }
+        />
       )}
+
+      <ProductionDayModal
+        isOpen={Boolean(selectedDay)}
+        day={selectedDay}
+        items={selectedDayItems}
+        canManage={false}
+        canPainterUpdate
+        onClose={() => setSelectedDay(null)}
+        onUpdateStatus={handleUpdateStatus}
+      />
     </div>
   );
 };

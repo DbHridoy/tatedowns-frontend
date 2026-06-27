@@ -388,14 +388,17 @@ export const normalizeScheduleItem = (item) => {
 
 export const normalizeProductionCalendarResponse = (response) => {
   const data = response?.data || response || {};
+  const rawItems = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.items)
+      ? data.items
+      : Array.isArray(data?.schedule)
+        ? data.schedule
+        : [];
   const crews = Array.isArray(data?.crews)
     ? data.crews.map(normalizeCrew)
     : [];
-  const items = Array.isArray(data?.items)
-    ? data.items.map(normalizeScheduleItem)
-    : Array.isArray(data?.schedule)
-      ? data.schedule.map(normalizeScheduleItem)
-      : [];
+  const items = rawItems.map(normalizeScheduleItem);
 
   return { crews, items };
 };

@@ -9,6 +9,7 @@ const ProductionCalendarToolbar = ({
   referenceDate,
   onViewModeChange,
   onToday,
+  title = "Production Calendar",
 }) => {
   const range = getCalendarRange(viewMode, referenceDate);
 
@@ -17,7 +18,7 @@ const ProductionCalendarToolbar = ({
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">
-            Production Calendar
+            {title}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {formatDateRangeLabel(range.startDate, range.endDate)}

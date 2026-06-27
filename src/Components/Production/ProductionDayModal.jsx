@@ -6,6 +6,7 @@ const ProductionDayModal = ({
   day,
   items = [],
   canManage = false,
+  canPainterUpdate = false,
   onClose,
   onScheduleJob,
   onUpdateStatus,
@@ -27,7 +28,7 @@ const ProductionDayModal = ({
       title={formattedDate}
       description="Scheduled jobs for this day, including assigned crews and status."
       footer={
-        canManage ? (
+        canManage || canPainterUpdate ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -36,13 +37,15 @@ const ProductionDayModal = ({
             >
               Close
             </button>
-            <button
-              type="button"
-              onClick={() => onScheduleJob?.(day)}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700"
-            >
-              Schedule Job
-            </button>
+            {canManage ? (
+              <button
+                type="button"
+                onClick={() => onScheduleJob?.(day)}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700"
+              >
+                Schedule Job
+              </button>
+            ) : null}
           </div>
         ) : null
       }
@@ -63,6 +66,7 @@ const ProductionDayModal = ({
               <ScheduleItemCard
                 item={item}
                 canManage={canManage}
+                canPainterUpdate={canPainterUpdate}
                 onUpdateStatus={onUpdateStatus}
                 onApplyRainDelay={onApplyRainDelay}
               />
