@@ -14,9 +14,9 @@ import {
 } from "../../utils/productionCalendar";
 
 const PainterSchedulePage = () => {
-  const range = getCalendarRange(CALENDAR_VIEW_MODES.ONE_MONTH, new Date());
+  const range = getCalendarRange(CALENDAR_VIEW_MODES.MONTH, new Date());
   const { data, isLoading } = useGetPainterOwnScheduleQuery({
-    viewMode: CALENDAR_VIEW_MODES.ONE_MONTH,
+    viewMode: CALENDAR_VIEW_MODES.MONTH,
     startDate: formatDateKey(range.startDate),
     endDate: formatDateKey(range.endDate),
   });

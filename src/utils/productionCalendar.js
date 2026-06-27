@@ -3,20 +3,36 @@ import {
   HOURS_PER_PRODUCTION_DAY,
 } from "../constants/production";
 
+export const parseCalendarDate = (value) => {
+  if (value instanceof Date) {
+    return new Date(value);
+  }
+
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const [, year, month, day] = match;
+      return new Date(Number(year), Number(month) - 1, Number(day));
+    }
+  }
+
+  return new Date(value);
+};
+
 export const startOfDay = (value) => {
-  const date = new Date(value);
+  const date = parseCalendarDate(value);
   date.setHours(0, 0, 0, 0);
   return date;
 };
 
 export const endOfDay = (value) => {
-  const date = new Date(value);
+  const date = parseCalendarDate(value);
   date.setHours(23, 59, 59, 999);
   return date;
 };
 
 export const addDays = (value, amount) => {
-  const date = new Date(value);
+  const date = parseCalendarDate(value);
   date.setDate(date.getDate() + amount);
   return date;
 };
@@ -30,7 +46,7 @@ export const formatDateKey = (value) => {
 };
 
 export const formatDateLabel = (value, options = {}) =>
-  new Date(value).toLocaleDateString("en-US", {
+  parseCalendarDate(value).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     ...options,
@@ -43,19 +59,74 @@ export const formatDateRangeLabel = (startDate, endDate) => {
   return `${start} - ${end}`;
 };
 
+const getWeekOfYear = (value) => {
+  const date = startOfDay(value);
+  const yearStart = new Date(date.getFullYear(), 0, 1);
+  const diffDays = Math.floor((date.getTime() - yearStart.getTime()) / 86400000);
+  return Math.floor((diffDays + yearStart.getDay()) / 7) + 1;
+};
+
+const getOrdinal = (value) => {
+  const remainderTen = value % 10;
+  const remainderHundred = value % 100;
+
+  if (remainderTen === 1 && remainderHundred !== 11) return `${value}st`;
+  if (remainderTen === 2 && remainderHundred !== 12) return `${value}nd`;
+  if (remainderTen === 3 && remainderHundred !== 13) return `${value}rd`;
+  return `${value}th`;
+};
+
+export const getCalendarNavigationLabel = (viewMode, referenceDate = new Date()) => {
+  const anchor = startOfDay(referenceDate);
+
+  if (viewMode === CALENDAR_VIEW_MODES.DAY) {
+    if (formatDateKey(anchor) === formatDateKey(new Date())) {
+      return "Today";
+    }
+
+    return anchor.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.WEEK) {
+    return `${getOrdinal(getWeekOfYear(anchor))} Week`;
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.MONTH) {
+    return anchor.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  return anchor.toLocaleDateString("en-US", {
+    year: "numeric",
+  });
+};
+
 export const getCalendarRange = (viewMode, referenceDate = new Date()) => {
   const anchor = startOfDay(referenceDate);
 
-  if (viewMode === CALENDAR_VIEW_MODES.TWO_WEEKS) {
+  if (viewMode === CALENDAR_VIEW_MODES.DAY) {
     return {
       startDate: anchor,
-      endDate: addDays(anchor, 13),
+      endDate: anchor,
+    };
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.WEEK) {
+    return {
+      startDate: addDays(anchor, -anchor.getDay()),
+      endDate: addDays(addDays(anchor, -anchor.getDay()), 6),
     };
   }
 
   const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
 
-  if (viewMode === CALENDAR_VIEW_MODES.ONE_MONTH) {
+  if (viewMode === CALENDAR_VIEW_MODES.MONTH) {
     return {
       startDate: monthStart,
       endDate: new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0),
@@ -63,8 +134,8 @@ export const getCalendarRange = (viewMode, referenceDate = new Date()) => {
   }
 
   return {
-    startDate: monthStart,
-    endDate: new Date(anchor.getFullYear(), anchor.getMonth() + 3, 0),
+    startDate: new Date(anchor.getFullYear(), 0, 1),
+    endDate: new Date(anchor.getFullYear(), 11, 31),
   };
 };
 
@@ -81,7 +152,7 @@ export const buildCalendarDays = (viewMode, referenceDate = new Date()) => {
       key: formatDateKey(current),
       date: new Date(current),
       label: formatDateLabel(current),
-      weekday: new Date(current).toLocaleDateString("en-US", {
+      weekday: parseCalendarDate(current).toLocaleDateString("en-US", {
         weekday: "short",
       }),
       isToday: formatDateKey(current) === formatDateKey(new Date()),
@@ -89,6 +160,115 @@ export const buildCalendarDays = (viewMode, referenceDate = new Date()) => {
   }
 
   return days;
+};
+
+export const buildMonthGrid = (monthDate) => {
+  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const firstVisibleDate = addDays(monthStart, -monthStart.getDay());
+  const lastVisibleDate = addDays(monthEnd, 6 - monthEnd.getDay());
+  const days = [];
+
+  for (
+    let current = startOfDay(firstVisibleDate);
+    current <= endOfDay(lastVisibleDate);
+    current = addDays(current, 1)
+  ) {
+    days.push({
+      key: formatDateKey(current),
+      date: new Date(current),
+      label: formatDateLabel(current),
+      weekday: parseCalendarDate(current).toLocaleDateString("en-US", {
+        weekday: "short",
+      }),
+      isToday: formatDateKey(current) === formatDateKey(new Date()),
+      isCurrentMonth: current.getMonth() === monthDate.getMonth(),
+    });
+  }
+
+  return days;
+};
+
+export const buildCalendarSections = (viewMode, referenceDate = new Date()) => {
+  const anchor = startOfDay(referenceDate);
+
+  if (viewMode === CALENDAR_VIEW_MODES.DAY) {
+    return [
+      {
+        key: `day-${formatDateKey(anchor)}`,
+        title: anchor.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        }),
+        layout: "day",
+        days: [
+          {
+            key: formatDateKey(anchor),
+            date: new Date(anchor),
+            label: formatDateLabel(anchor),
+            weekday: anchor.toLocaleDateString("en-US", { weekday: "short" }),
+            isToday: formatDateKey(anchor) === formatDateKey(new Date()),
+            isCurrentMonth: true,
+          },
+        ].map((day) => ({
+          ...day,
+          isCurrentMonth: true,
+        })),
+      },
+    ];
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.WEEK) {
+    const range = getCalendarRange(viewMode, anchor);
+
+    return [
+      {
+        key: `week-${formatDateKey(range.startDate)}`,
+        title: formatDateRangeLabel(range.startDate, range.endDate),
+        layout: "week",
+        days: buildCalendarDays(viewMode, range.startDate).map((day) => ({
+          ...day,
+          isCurrentMonth: true,
+        })),
+      },
+    ];
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.MONTH) {
+    const monthDate = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+
+    return [
+      {
+        key: `month-${monthDate.getFullYear()}-${monthDate.getMonth()}`,
+        title: monthDate.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        }),
+        layout: "month",
+        days: buildMonthGrid(monthDate),
+      },
+    ];
+  }
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const monthDate = new Date(anchor.getFullYear(), index, 1);
+
+    return {
+      key: `month-${monthDate.getFullYear()}-${monthDate.getMonth()}`,
+      title: monthDate.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      monthLabel: monthDate.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      layout: "month",
+      days: buildMonthGrid(monthDate),
+    };
+  });
 };
 
 export const getDefaultScheduleDays = (job) => {
@@ -181,12 +361,13 @@ export const normalizeScheduleItem = (item) => {
       client?.jobSiteLocation ||
       item?.address ||
       "",
-    startDate: rawStart ? new Date(rawStart).toISOString() : "",
-    endDate: rawEnd ? new Date(rawEnd).toISOString() : "",
+    startDate: rawStart ? formatDateKey(rawStart) : "",
+    endDate: rawEnd ? formatDateKey(rawEnd) : "",
     status: item?.status || "Not Started",
     notes: item?.notes || item?.note || "",
     estimatedDurationDays: durationDays,
     durationDays,
+    displayOrder: Number(item?.displayOrder) || 0,
     estimatedLaborHours:
       Number(item?.estimatedLaborHours) || Number(item?.job?.totalHours) || 0,
     rainDelayHistory,
@@ -219,6 +400,25 @@ export const normalizeProductionCalendarResponse = (response) => {
   return { crews, items };
 };
 
+export const groupScheduleItemsByDay = (items = [], days = []) => {
+  const lookup = {};
+
+  items.forEach((item) => {
+    days.forEach((day) => {
+      if (isScheduleItemOnDay(item, day.key)) {
+        lookup[day.key] = lookup[day.key] || [];
+        lookup[day.key].push(item);
+      }
+    });
+  });
+
+  Object.keys(lookup).forEach((key) => {
+    lookup[key] = sortScheduleItems(lookup[key]);
+  });
+
+  return lookup;
+};
+
 export const isScheduleItemOnDay = (item, dayKey) => {
   if (!item?.startDate || !item?.endDate) return false;
   const day = startOfDay(dayKey);
@@ -226,6 +426,17 @@ export const isScheduleItemOnDay = (item, dayKey) => {
   const end = endOfDay(item.endDate);
   return day >= start && day <= end;
 };
+
+export const sortScheduleItems = (items = []) =>
+  [...items].sort((left, right) => {
+    const orderDiff = Number(left?.displayOrder || 0) - Number(right?.displayOrder || 0);
+    if (orderDiff !== 0) return orderDiff;
+
+    const startDiff = startOfDay(left?.startDate).getTime() - startOfDay(right?.startDate).getTime();
+    if (startDiff !== 0) return startDiff;
+
+    return String(left?._id || "").localeCompare(String(right?._id || ""));
+  });
 
 export const getAvailableJobOption = (job) => ({
   _id: job?._id || job?.id || "",

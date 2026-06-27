@@ -1,62 +1,52 @@
 import { CALENDAR_VIEW_OPTIONS } from "../../constants/production";
-import { formatDateRangeLabel, getCalendarRange } from "../../utils/productionCalendar";
+import {
+  formatDateRangeLabel,
+  getCalendarRange,
+} from "../../utils/productionCalendar";
 
 const ProductionCalendarToolbar = ({
   viewMode,
   referenceDate,
   onViewModeChange,
-  onPrevious,
-  onNext,
   onToday,
 }) => {
   const range = getCalendarRange(viewMode, referenceDate);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff,_#f8fafc)] p-5 shadow-sm">
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-3xl font-semibold text-slate-900">
             Production Calendar
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500">
             {formatDateRangeLabel(range.startDate, range.endDate)}
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onPrevious}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              onClick={onToday}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={onNext}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Next
-            </button>
-          </div>
-          <select
-            value={viewMode}
-            onChange={(event) => onViewModeChange(event.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700"
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+          <button
+            type="button"
+            onClick={onToday}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
+            Today
+          </button>
+          <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1">
             {CALENDAR_VIEW_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onViewModeChange(option.value)}
+                className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  viewMode === option.value
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
                 {option.label}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       </div>
     </div>
@@ -64,4 +54,3 @@ const ProductionCalendarToolbar = ({
 };
 
 export default ProductionCalendarToolbar;
-

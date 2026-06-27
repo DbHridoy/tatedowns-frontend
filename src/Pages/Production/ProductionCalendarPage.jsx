@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import ProductionCalendarToolbar from "../../Components/Production/ProductionCalendarToolbar";
 import ProductionCalendarGrid from "../../Components/Production/ProductionCalendarGrid";
+import ProductionDayModal from "../../Components/Production/ProductionDayModal";
 import ScheduleJobModal from "../../Components/Production/ScheduleJobModal";
 import RainDelayModal from "../../Components/Production/RainDelayModal";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
@@ -19,53 +20,70 @@ import { APP_ROLES } from "../../constants/roles";
 import { CALENDAR_VIEW_MODES } from "../../constants/production";
 import {
   addDays,
-  buildCalendarDays,
+  buildCalendarSections,
   formatDateKey,
-  getCalendarRange,
-  isScheduleItemOnDay,
+  groupScheduleItemsByDay,
   normalizeCrew,
   normalizeProductionCalendarResponse,
 } from "../../utils/productionCalendar";
 
 const shiftReferenceDate = (viewMode, referenceDate, direction) => {
-  if (viewMode === CALENDAR_VIEW_MODES.TWO_WEEKS) {
-    return addDays(referenceDate, direction * 14);
+  if (viewMode === CALENDAR_VIEW_MODES.DAY) {
+    return addDays(referenceDate, direction);
   }
 
-  if (viewMode === CALENDAR_VIEW_MODES.ONE_MONTH) {
+  if (viewMode === CALENDAR_VIEW_MODES.WEEK) {
+    return addDays(referenceDate, direction * 7);
+  }
+
+  if (viewMode === CALENDAR_VIEW_MODES.MONTH) {
     return new Date(referenceDate.getFullYear(), referenceDate.getMonth() + direction, 1);
   }
 
-  return new Date(referenceDate.getFullYear(), referenceDate.getMonth() + direction * 3, 1);
+  return new Date(referenceDate.getFullYear() + direction, 0, 1);
 };
 
 const ProductionCalendarPage = () => {
   const role = useSelector(selectUserRole);
   const canManage = role === APP_ROLES.ADMIN || role === APP_ROLES.PRODUCTION_MANAGER;
-  const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.TWO_WEEKS);
+  const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.WEEK);
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [scheduleModalState, setScheduleModalState] = useState({
     open: false,
     date: "",
     crewId: "",
   });
+  const [selectedDay, setSelectedDay] = useState(null);
   const [rainDelayItem, setRainDelayItem] = useState(null);
 
-  const calendarRange = useMemo(
-    () => getCalendarRange(viewMode, referenceDate),
+  const calendarSections = useMemo(
+    () => buildCalendarSections(viewMode, referenceDate),
     [referenceDate, viewMode]
   );
   const calendarDays = useMemo(
-    () => buildCalendarDays(viewMode, referenceDate),
-    [referenceDate, viewMode]
+    () => calendarSections.flatMap((section) => section.days),
+    [calendarSections]
   );
+  const visibleRange = useMemo(() => {
+    if (!calendarDays.length) {
+      return {
+        startDate: new Date(),
+        endDate: new Date(),
+      };
+    }
+
+    return {
+      startDate: calendarDays[0].date,
+      endDate: calendarDays[calendarDays.length - 1].date,
+    };
+  }, [calendarDays]);
 
   const { data: crewsData, isLoading: isCrewsLoading } = useGetCrewsQuery();
-  const { data: calendarData, isLoading: isCalendarLoading, isError } =
+  const { data: calendarData, isLoading: isCalendarLoading, isError, refetch: refetchCalendar } =
     useGetProductionCalendarScheduleQuery({
       viewMode,
-      startDate: formatDateKey(calendarRange.startDate),
-      endDate: formatDateKey(calendarRange.endDate),
+      startDate: formatDateKey(visibleRange.startDate),
+      endDate: formatDateKey(visibleRange.endDate),
     });
   const { data: jobsData, isLoading: isJobsLoading } =
     useGetAvailableJobsForSchedulingQuery({
@@ -89,27 +107,25 @@ const ProductionCalendarPage = () => {
     if (apiCrews.length) return apiCrews;
     return normalizedCalendar.crews;
   }, [crewsData?.data, normalizedCalendar.crews]);
-  const itemsByCrewAndDay = useMemo(() => {
-    const lookup = {};
-
-    normalizedCalendar.items.forEach((item) => {
-      calendarDays.forEach((day) => {
-        if (isScheduleItemOnDay(item, day.key)) {
-          const key = `${item.crewId}-${day.key}`;
-          lookup[key] = lookup[key] || [];
-          lookup[key].push(item);
-        }
-      });
-    });
-
-    return lookup;
+  const itemsByDay = useMemo(() => {
+    return groupScheduleItemsByDay(normalizedCalendar.items, calendarDays);
   }, [calendarDays, normalizedCalendar.items]);
+
+  const selectedDayItems = selectedDay?.key ? itemsByDay[selectedDay.key] || [] : [];
+
+  const findCalendarDayByKey = (dateKey) =>
+    calendarDays.find((day) => day.key === dateKey) || null;
 
   const handleScheduleSubmit = async (payload) => {
     try {
       await createScheduleItem(payload).unwrap();
+      await refetchCalendar();
       toast.success("Job scheduled successfully.");
       setScheduleModalState({ open: false, date: "", crewId: "" });
+      const scheduledDay = findCalendarDayByKey(payload.startDate);
+      if (scheduledDay) {
+        setSelectedDay(scheduledDay);
+      }
     } catch (error) {
       toast.error(error?.data?.message || "Failed to schedule job.");
     }
@@ -120,6 +136,7 @@ const ProductionCalendarPage = () => {
 
     try {
       await updateScheduleStatus({ scheduleId: item._id, status }).unwrap();
+      await refetchCalendar();
       toast.success("Schedule status updated.");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to update status.");
@@ -129,6 +146,7 @@ const ProductionCalendarPage = () => {
   const handleApplyRainDelay = async (payload) => {
     try {
       await applyRainDelay(payload).unwrap();
+      await refetchCalendar();
       toast.success("Rain delay applied.");
       setRainDelayItem(null);
     } catch (error) {
@@ -142,42 +160,8 @@ const ProductionCalendarPage = () => {
         viewMode={viewMode}
         referenceDate={referenceDate}
         onViewModeChange={setViewMode}
-        onPrevious={() =>
-          setReferenceDate((current) => shiftReferenceDate(viewMode, current, -1))
-        }
-        onNext={() =>
-          setReferenceDate((current) => shiftReferenceDate(viewMode, current, 1))
-        }
         onToday={() => setReferenceDate(new Date())}
       />
-
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">
-              Crew workload overview
-            </h2>
-            <p className="text-sm text-gray-500">
-              Review crew assignments, schedule overlapping work, and manage rain delays from a single calendar.
-            </p>
-          </div>
-          {canManage ? (
-            <button
-              type="button"
-              onClick={() =>
-                setScheduleModalState({
-                  open: true,
-                  date: formatDateKey(new Date()),
-                  crewId: "",
-                })
-              }
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Schedule Job
-            </button>
-          ) : null}
-        </div>
-      </div>
 
       {isCrewsLoading || isCalendarLoading ? (
         <SimpleLoader text="Loading production calendar..." className="min-h-[360px]" />
@@ -187,22 +171,49 @@ const ProductionCalendarPage = () => {
         </div>
       ) : (
         <ProductionCalendarGrid
-          crews={crews}
-          days={calendarDays}
-          itemsByCrewAndDay={itemsByCrewAndDay}
+          sections={calendarSections}
+          itemsByDay={itemsByDay}
           canManage={canManage}
-          onCellClick={({ date = "", crewId = "" }) => {
-            if (!canManage) return;
+          onDateClick={(day) => setSelectedDay(day)}
+          viewMode={viewMode}
+          referenceDate={referenceDate}
+          onPrevious={() =>
+            setReferenceDate((current) => shiftReferenceDate(viewMode, current, -1))
+          }
+          onNext={() =>
+            setReferenceDate((current) => shiftReferenceDate(viewMode, current, 1))
+          }
+          onScheduleJob={(section) => {
+            const firstDay = section?.days?.find((day) => day?.isCurrentMonth !== false)
+              || section?.days?.[0];
+            setSelectedDay(null);
             setScheduleModalState({
               open: true,
-              date: date || formatDateKey(new Date()),
-              crewId,
+              date: firstDay?.key || formatDateKey(new Date()),
+              crewId: "",
             });
           }}
-          onUpdateStatus={handleUpdateStatus}
-          onApplyRainDelay={(item) => setRainDelayItem(item)}
         />
       )}
+
+      <ProductionDayModal
+        isOpen={Boolean(selectedDay)}
+        day={selectedDay}
+        items={selectedDayItems}
+        canManage={canManage}
+        onClose={() => setSelectedDay(null)}
+        onScheduleJob={(day) => {
+          if (!canManage) return;
+          setSelectedDay(null);
+          setScheduleModalState({
+            open: true,
+            date: day?.key || formatDateKey(new Date()),
+            crewId: "",
+          });
+        }}
+        onUpdateStatus={handleUpdateStatus}
+        onApplyRainDelay={(item) => setRainDelayItem(item)}
+      />
 
       <ScheduleJobModal
         isOpen={scheduleModalState.open}

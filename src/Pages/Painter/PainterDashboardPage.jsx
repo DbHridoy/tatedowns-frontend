@@ -16,11 +16,11 @@ import {
 } from "../../utils/productionCalendar";
 
 const PainterDashboardPage = () => {
-  const range = getCalendarRange(CALENDAR_VIEW_MODES.TWO_WEEKS, new Date());
+  const range = getCalendarRange(CALENDAR_VIEW_MODES.WEEK, new Date());
   const { data: crewData, isLoading: isCrewLoading } = useGetPainterOwnCrewQuery();
   const { data: scheduleData, isLoading: isScheduleLoading } =
     useGetPainterOwnScheduleQuery({
-      viewMode: CALENDAR_VIEW_MODES.TWO_WEEKS,
+      viewMode: CALENDAR_VIEW_MODES.WEEK,
       startDate: formatDateKey(range.startDate),
       endDate: formatDateKey(range.endDate),
     });

@@ -1,13 +1,15 @@
 export const CALENDAR_VIEW_MODES = {
-  TWO_WEEKS: "twoWeeks",
-  ONE_MONTH: "month",
-  THREE_MONTHS: "threeMonths",
+  DAY: "day",
+  WEEK: "week",
+  MONTH: "month",
+  YEAR: "year",
 };
 
 export const CALENDAR_VIEW_OPTIONS = [
-  { label: "2 Weeks", value: CALENDAR_VIEW_MODES.TWO_WEEKS },
-  { label: "1 Month", value: CALENDAR_VIEW_MODES.ONE_MONTH },
-  { label: "3 Months", value: CALENDAR_VIEW_MODES.THREE_MONTHS },
+  { label: "Day", value: CALENDAR_VIEW_MODES.DAY },
+  { label: "Week", value: CALENDAR_VIEW_MODES.WEEK },
+  { label: "Month", value: CALENDAR_VIEW_MODES.MONTH },
+  { label: "Year", value: CALENDAR_VIEW_MODES.YEAR },
 ];
 
 export const SCHEDULE_STATUSES = [
@@ -84,7 +86,7 @@ export const HOURS_PER_PRODUCTION_DAY = 22;
  */
 
 /**
- * @typedef {"twoWeeks"|"month"|"threeMonths"} CalendarViewMode
+ * @typedef {"day"|"week"|"month"|"year"} CalendarViewMode
  */
 
 /**
