@@ -327,7 +327,7 @@ export const normalizeScheduleItem = (item) => {
   const crewId =
     item?.crewId?._id || item?.crewId || item?.crew?._id || item?.crew || "";
   const jobId = item?.jobId?._id || item?.jobId || item?.job?._id || item?.job || "";
-  const client = item?.clientId || item?.job?.clientId;
+  const client = item?.client || item?.clientId || item?.job?.clientId;
   const rainDelayHistory = Array.isArray(item?.rainDelayHistory)
     ? item.rainDelayHistory
     : [];
