@@ -7,6 +7,9 @@ const ScheduleJobModal = ({
   isOpen,
   selectedDate,
   selectedCrewId,
+  selectedJobId,
+  presetJob,
+  lockJobSelection = false,
   crews,
   jobs = [],
   isLoadingJobs,
@@ -14,10 +17,17 @@ const ScheduleJobModal = ({
   onClose,
   onSubmit,
 }) => {
-  const normalizedJobs = useMemo(
-    () => jobs.map(getAvailableJobOption).filter((job) => job._id),
-    [jobs]
-  );
+  const normalizedJobs = useMemo(() => {
+    const mappedJobs = jobs.map(getAvailableJobOption).filter((job) => job._id);
+    const presetJobOption = presetJob ? getAvailableJobOption(presetJob) : null;
+
+    if (!presetJobOption?._id) {
+      return mappedJobs;
+    }
+
+    const hasPresetJob = mappedJobs.some((job) => job._id === presetJobOption._id);
+    return hasPresetJob ? mappedJobs : [presetJobOption, ...mappedJobs];
+  }, [jobs, presetJob]);
   const [formState, setFormState] = useState({
     jobId: "",
     crewId: "",
@@ -29,15 +39,16 @@ const ScheduleJobModal = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    const firstJob = normalizedJobs[0];
+    const presetJob =
+      normalizedJobs.find((job) => job._id === selectedJobId) || normalizedJobs[0];
     setFormState({
-      jobId: firstJob?._id || "",
+      jobId: presetJob?._id || "",
       crewId: selectedCrewId || crews[0]?._id || "",
       startDate: selectedDate || new Date().toISOString().slice(0, 10),
-      durationDays: firstJob?.defaultDays || 1,
+      durationDays: presetJob?.defaultDays || 1,
       notes: "",
     });
-  }, [crews, isOpen, normalizedJobs, selectedCrewId, selectedDate]);
+  }, [crews, isOpen, normalizedJobs, selectedCrewId, selectedDate, selectedJobId]);
 
   useEffect(() => {
     if (!formState.jobId) return;
@@ -110,7 +121,7 @@ const ScheduleJobModal = ({
                 durationDays: nextJob?.defaultDays || current.durationDays,
               }));
             }}
-            disabled={isLoadingJobs}
+            disabled={isLoadingJobs || lockJobSelection}
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700"
           >
             <option value="">Select a job</option>
@@ -186,9 +197,11 @@ const ScheduleJobModal = ({
           </div>
           <div className="rounded-lg border border-gray-200 bg-slate-50 p-3 text-sm text-slate-600">
             <p className="font-medium text-slate-800">Selected job details</p>
-            <p className="mt-2">
-              {selectedJob?.jobId || "No job selected"}
-              {selectedJob?.location ? ` • ${selectedJob.location}` : ""}
+            <p className="mt-2 font-medium text-slate-800">
+              {selectedJob?.title || "No job selected"}
+            </p>
+            <p className="mt-1">
+              {selectedJob?.location || "Address unavailable"}
             </p>
             <p className="mt-1">{selectedJob?.clientName || "Client/site details unavailable"}</p>
           </div>

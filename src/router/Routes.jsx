@@ -50,8 +50,6 @@ import GlobalNoRoute from "../Pages/Common/GlobalNoRoute";
 import Settings from "../Pages/Common/ProductionSettings";
 import AddClient from "../Pages/Common/AddClient";
 import ProductionManagerReports from "../Pages/Production-Manager/Reports/ProductionManagerReports";
-import MyJobs from "../Pages/Production-Manager/MyJobs/PmJobs";
-import PmScheduledJobs from "../Pages/Production-Manager/MyJobs/PmScheduledJobs";
 import AdminClientDetails from "../Pages/Admin/Clients/AdminClientDetails";
 import AdminQuote from "../Pages/Admin/Quotes/AdminQuote";
 import AdminQuoteDetails from "../Pages/Admin/Quotes/AdminQuoteDetails";
@@ -143,12 +141,6 @@ export const router = createBrowserRouter([
           { path: "jobs", element: <Navigate to="/production/calendar" replace /> },
           { path: "jobss", element: <JobScheduling /> },
           { path: "jobs/:jobId", element: <PmJobDetailsPage /> },
-          { path: "scheduled-jobs", element: <PmScheduledJobs /> },
-          { path: "my-jobs", element: <MyJobs /> },
-          {
-            path: "my-jobs/:jobId",
-            element: <PmJobDetailsPage />,
-          },
           { path: "reports", element: <ProductionManagerReports /> },
           { path: "settings", element: <ProductionSettings /> }, // matches menuConfig
           { path: "*", element: <GlobalNoRoute /> },
@@ -212,4 +204,3 @@ export const router = createBrowserRouter([
   // Fallback
   { path: "*", element: <GlobalNoRoute /> },
 ]);
-

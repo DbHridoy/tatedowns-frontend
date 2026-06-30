@@ -34,13 +34,6 @@ export const menuConfig = {
       label: "Jobs",
       Link: "/production-manager/jobss",
     },
-    { icon: <FiBriefcase className="w-5 h-5" />, label: "My Jobs", Link: "/production-manager/my-jobs" },
-    {
-      icon: <FiCalendar className="w-5 h-5" />,
-      label: "Scheduled Jobs",
-      Link: "/production-manager/scheduled-jobs",
-      separated: true,
-    },
     { icon: <FiSettings className="w-5 h-5" />, label: "Settings", Link: "/production-manager/settings" },
   ],
   [APP_ROLES.ADMIN]: [
@@ -69,4 +62,3 @@ export const menuConfig = {
     { icon: <FiSettings className="w-5 h-5" />, label: "Settings", Link: "/painter/settings" },
   ],
 };
-
