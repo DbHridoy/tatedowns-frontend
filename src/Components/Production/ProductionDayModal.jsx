@@ -8,7 +8,6 @@ const ProductionDayModal = ({
   canManage = false,
   canPainterUpdate = false,
   onClose,
-  onScheduleJob,
   onUpdateStatus,
   onApplyRainDelay,
 }) => {
@@ -37,15 +36,6 @@ const ProductionDayModal = ({
             >
               Close
             </button>
-            {canManage ? (
-              <button
-                type="button"
-                onClick={() => onScheduleJob?.(day)}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700"
-              >
-                Schedule Job
-              </button>
-            ) : null}
           </div>
         ) : null
       }

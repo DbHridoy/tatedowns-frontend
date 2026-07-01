@@ -32,7 +32,7 @@ export const menuConfig = {
     {
       icon: <FiCalendar className="w-5 h-5" />,
       label: "Jobs",
-      Link: "/production-manager/jobss",
+      Link: "/production-manager/jobs",
     },
     { icon: <FiSettings className="w-5 h-5" />, label: "Settings", Link: "/production-manager/settings" },
   ],
@@ -47,9 +47,6 @@ export const menuConfig = {
       Link: "/admin/scheduled-jobs",
       separated: true,
     },
-    { icon: <FiCalendar className="w-5 h-5" />, label: "Production Calendar", Link: "/production/calendar" },
-    { icon: <FiUsers className="w-5 h-5" />, label: "Crews", Link: "/production/crews" },
-    { icon: <FiUserCheck className="w-5 h-5" />, label: "Painters", Link: "/production/painters" },
     { icon: <FiCheckSquare className="w-5 h-5" />, label: "Approvals Center", Link: "/admin/approvals-center" },
     { icon: <FiUserCheck className="w-5 h-5" />, label: "User Management", Link: "/admin/user-management" },
     { icon: <FiSliders className="w-5 h-5" />, label: "Parameters", Link: "/admin/parameters" },

@@ -18,8 +18,6 @@ const ProductionCalendarGrid = ({
   sections,
   itemsByDay,
   onDateClick,
-  canManage = false,
-  onScheduleJob,
   viewMode,
   referenceDate,
   onPrevious,
@@ -67,15 +65,6 @@ const ProductionCalendarGrid = ({
                     →
                   </button>
                 </div>
-                {canManage ? (
-                  <button
-                    type="button"
-                    onClick={() => onScheduleJob?.(section)}
-                    className="self-start rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-700 sm:self-auto"
-                  >
-                    Schedule Job
-                  </button>
-                ) : null}
               </div>
             </div>
 
@@ -129,11 +118,11 @@ const ProductionCalendarGrid = ({
                         <div
                           key={item._id}
                           className={`rounded-xl px-2.5 py-2 text-[11px] shadow-sm ${
-                            item.status === "Completed"
+                            item.status === "Pending Close"
                               ? "bg-emerald-100 text-emerald-900"
-                              : item.status === "Delayed"
+                              : item.isRainDelayed
                                 ? "bg-amber-100 text-amber-900"
-                                : item.status === "In Progress"
+                                : item.status === "Scheduled and Open"
                                   ? "bg-sky-100 text-sky-900"
                                   : "bg-slate-100 text-slate-800"
                           }`}
@@ -145,11 +134,6 @@ const ProductionCalendarGrid = ({
                       {dayItems.length > 3 ? (
                         <p className="px-1 text-[11px] font-medium text-slate-500">
                           +{dayItems.length - 3} more
-                        </p>
-                      ) : null}
-                      {!dayItems.length && canManage ? (
-                        <p className="px-1 pt-4 text-[11px] text-slate-400">
-                          Schedule job
                         </p>
                       ) : null}
                     </div>

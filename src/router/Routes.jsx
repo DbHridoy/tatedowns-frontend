@@ -113,7 +113,7 @@ export const router = createBrowserRouter([
   // Shared production routes
   {
     path: "/production",
-    element: <RoleGuard allowedRole={["Admin", "Production Manager"]} />,
+    element: <RoleGuard allowedRole="Production Manager" />,
     children: [
       {
         element: <MainLayout />,
@@ -138,8 +138,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="home" replace /> },
           { path: "home", element: <ProductionHome /> }, // matches menuConfig
-          { path: "jobs", element: <Navigate to="/production/calendar" replace /> },
-          { path: "jobss", element: <JobScheduling /> },
+          { path: "jobs", element: <JobScheduling /> },
+          { path: "jobss", element: <Navigate to="/production-manager/jobs" replace /> },
           { path: "jobs/:jobId", element: <PmJobDetailsPage /> },
           { path: "reports", element: <ProductionManagerReports /> },
           { path: "settings", element: <ProductionSettings /> }, // matches menuConfig

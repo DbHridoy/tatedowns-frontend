@@ -13,10 +13,8 @@ export const CALENDAR_VIEW_OPTIONS = [
 ];
 
 export const SCHEDULE_STATUSES = [
-  "Not Started",
-  "In Progress",
-  "Delayed",
-  "Completed",
+  "Scheduled and Open",
+  "Pending Close",
 ];
 
 export const SCHEDULE_STATUS_OPTIONS = SCHEDULE_STATUSES.map((status) => ({
@@ -82,7 +80,7 @@ export const HOURS_PER_PRODUCTION_DAY = 22;
  */
 
 /**
- * @typedef {"Not Started"|"In Progress"|"Delayed"|"Completed"} ScheduleStatus
+ * @typedef {"Scheduled and Open"|"Pending Close"} ScheduleStatus
  */
 
 /**

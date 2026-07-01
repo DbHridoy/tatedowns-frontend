@@ -363,7 +363,7 @@ export const normalizeScheduleItem = (item) => {
       "",
     startDate: rawStart ? formatDateKey(rawStart) : "",
     endDate: rawEnd ? formatDateKey(rawEnd) : "",
-    status: item?.status || "Not Started",
+    status: item?.status || "Scheduled and Open",
     notes: item?.notes || item?.note || "",
     estimatedDurationDays: durationDays,
     durationDays,
@@ -443,10 +443,18 @@ export const sortScheduleItems = (items = []) =>
 
 export const getAvailableJobOption = (job) => ({
   _id: job?._id || job?.id || "",
-  title: job?.title || `Job ${job?.customJobId || job?._id || ""}`.trim(),
+  title:
+    job?.title ||
+    job?.jobTitle ||
+    (job?.clientId?.clientName
+      ? `${job.clientId.clientName} Project`
+      : job?.clientName
+        ? `${job.clientName} Project`
+        : "Untitled Job"),
   jobId: job?.customJobId || job?._id || "",
   clientName: job?.clientId?.clientName || job?.clientName || "",
   location:
+    job?.location ||
     job?.jobSiteLocation ||
     [
       job?.clientId?.address,
@@ -464,12 +472,10 @@ export const getAvailableJobOption = (job) => ({
 
 export const getScheduleStatusClasses = (status) => {
   switch (status) {
-    case "Completed":
+    case "Pending Close":
       return "bg-green-100 text-green-800";
-    case "In Progress":
+    case "Scheduled and Open":
       return "bg-blue-100 text-blue-800";
-    case "Delayed":
-      return "bg-amber-100 text-amber-800";
     default:
       return "bg-slate-100 text-slate-700";
   }

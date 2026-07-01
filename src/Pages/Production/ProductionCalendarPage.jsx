@@ -4,13 +4,10 @@ import { useSelector } from "react-redux";
 import ProductionCalendarToolbar from "../../Components/Production/ProductionCalendarToolbar";
 import ProductionCalendarGrid from "../../Components/Production/ProductionCalendarGrid";
 import ProductionDayModal from "../../Components/Production/ProductionDayModal";
-import ScheduleJobModal from "../../Components/Production/ScheduleJobModal";
 import RainDelayModal from "../../Components/Production/RainDelayModal";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
 import {
   useApplyRainDelayMutation,
-  useCreateScheduleItemMutation,
-  useGetAvailableJobsForSchedulingQuery,
   useGetCrewsQuery,
   useGetProductionCalendarScheduleQuery,
   useUpdateScheduleStatusMutation,
@@ -23,7 +20,6 @@ import {
   buildCalendarSections,
   formatDateKey,
   groupScheduleItemsByDay,
-  normalizeCrew,
   normalizeProductionCalendarResponse,
 } from "../../utils/productionCalendar";
 
@@ -48,11 +44,6 @@ const ProductionCalendarPage = () => {
   const canManage = role === APP_ROLES.ADMIN || role === APP_ROLES.PRODUCTION_MANAGER;
   const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.WEEK);
   const [referenceDate, setReferenceDate] = useState(new Date());
-  const [scheduleModalState, setScheduleModalState] = useState({
-    open: false,
-    date: "",
-    crewId: "",
-  });
   const [selectedDay, setSelectedDay] = useState(null);
   const [rainDelayItem, setRainDelayItem] = useState(null);
 
@@ -78,19 +69,13 @@ const ProductionCalendarPage = () => {
     };
   }, [calendarDays]);
 
-  const { data: crewsData, isLoading: isCrewsLoading } = useGetCrewsQuery();
+  const { isLoading: isCrewsLoading } = useGetCrewsQuery();
   const { data: calendarData, isLoading: isCalendarLoading, isError, refetch: refetchCalendar } =
     useGetProductionCalendarScheduleQuery({
       viewMode,
       startDate: formatDateKey(visibleRange.startDate),
       endDate: formatDateKey(visibleRange.endDate),
     });
-  const { data: jobsData, isLoading: isJobsLoading } =
-    useGetAvailableJobsForSchedulingQuery({
-      startDate: scheduleModalState.date,
-    });
-  const [createScheduleItem, { isLoading: isCreatingSchedule }] =
-    useCreateScheduleItemMutation();
   const [applyRainDelay, { isLoading: isApplyingRainDelay }] =
     useApplyRainDelayMutation();
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
@@ -99,37 +84,11 @@ const ProductionCalendarPage = () => {
     () => normalizeProductionCalendarResponse(calendarData),
     [calendarData]
   );
-  const crews = useMemo(() => {
-    const apiCrews = Array.isArray(crewsData?.data)
-      ? crewsData.data.map(normalizeCrew)
-      : [];
-
-    if (apiCrews.length) return apiCrews;
-    return normalizedCalendar.crews;
-  }, [crewsData?.data, normalizedCalendar.crews]);
   const itemsByDay = useMemo(() => {
     return groupScheduleItemsByDay(normalizedCalendar.items, calendarDays);
   }, [calendarDays, normalizedCalendar.items]);
 
   const selectedDayItems = selectedDay?.key ? itemsByDay[selectedDay.key] || [] : [];
-
-  const findCalendarDayByKey = (dateKey) =>
-    calendarDays.find((day) => day.key === dateKey) || null;
-
-  const handleScheduleSubmit = async (payload) => {
-    try {
-      await createScheduleItem(payload).unwrap();
-      await refetchCalendar();
-      toast.success("Job scheduled successfully.");
-      setScheduleModalState({ open: false, date: "", crewId: "" });
-      const scheduledDay = findCalendarDayByKey(payload.startDate);
-      if (scheduledDay) {
-        setSelectedDay(scheduledDay);
-      }
-    } catch (error) {
-      toast.error(error?.data?.message || "Failed to schedule job.");
-    }
-  };
 
   const handleUpdateStatus = async (item, status) => {
     if (status === item.status) return;
@@ -183,16 +142,6 @@ const ProductionCalendarPage = () => {
           onNext={() =>
             setReferenceDate((current) => shiftReferenceDate(viewMode, current, 1))
           }
-          onScheduleJob={(section) => {
-            const firstDay = section?.days?.find((day) => day?.isCurrentMonth !== false)
-              || section?.days?.[0];
-            setSelectedDay(null);
-            setScheduleModalState({
-              open: true,
-              date: firstDay?.key || formatDateKey(new Date()),
-              crewId: "",
-            });
-          }}
         />
       )}
 
@@ -202,29 +151,8 @@ const ProductionCalendarPage = () => {
         items={selectedDayItems}
         canManage={canManage}
         onClose={() => setSelectedDay(null)}
-        onScheduleJob={(day) => {
-          if (!canManage) return;
-          setSelectedDay(null);
-          setScheduleModalState({
-            open: true,
-            date: day?.key || formatDateKey(new Date()),
-            crewId: "",
-          });
-        }}
         onUpdateStatus={handleUpdateStatus}
         onApplyRainDelay={(item) => setRainDelayItem(item)}
-      />
-
-      <ScheduleJobModal
-        isOpen={scheduleModalState.open}
-        selectedDate={scheduleModalState.date}
-        selectedCrewId={scheduleModalState.crewId}
-        crews={crews}
-        jobs={jobsData?.data || []}
-        isLoadingJobs={isJobsLoading}
-        isSubmitting={isCreatingSchedule}
-        onClose={() => setScheduleModalState({ open: false, date: "", crewId: "" })}
-        onSubmit={handleScheduleSubmit}
       />
 
       <RainDelayModal

@@ -37,6 +37,17 @@ const formatOptionalDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleDateString();
 };
 
+const formatJobAddress = (job) =>
+  job?.jobSiteLocation ||
+  [
+    job?.clientId?.address,
+    job?.clientId?.city,
+    job?.clientId?.state,
+    job?.clientId?.zipCode,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
 function JobScheduling() {
   const navigate = useNavigate();
   const me = useSelector(selectCurrentUser);
@@ -102,11 +113,13 @@ function JobScheduling() {
   const formattedJobs = jobs.map((job) => ({
     _id: job._id,
     clientName: job.clientId?.clientName ?? "N/A",
+    title: job.title || job.jobTitle || "Untitled Job",
     jobTitle: job.title || "Untitled Job",
     estimatedPrice: job.price,
     jobStatus: job.status,
     estimatedStartDate: formatOptionalDate(job.estimatedStartDate),
     startDate: formatOptionalDate(job.startDate),
+    location: formatJobAddress(job),
   }));
 
   const openScheduleModal = (item) => {
@@ -167,7 +180,9 @@ function JobScheduling() {
         label: "View",
         className: "bg-blue-500 text-white p-2 rounded-lg",
         onClick: (item) => {
-          navigate(`/production-manager/jobs/${item._id}`);
+          navigate(`/production-manager/jobs/${item._id}`, {
+            state: { jobsViewMode: viewMode },
+          });
         },
       },
       ...(viewMode === "available"
