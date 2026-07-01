@@ -238,6 +238,8 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
                       }`}
                     >
                       {actions.map((action, i) => {
+                        const isHidden = action.hidden?.(row);
+                        if (isHidden) return null;
                         const isDisabled = action.disabled?.(row);
                         return (
                           <button
@@ -319,10 +321,12 @@ const DataTable = ({ title, data = [], config = {}, loading = false }) => {
 
                     {actions.length > 0 && (
                       <td className="px-3 sm:px-4 py-3 flex flex-wrap justify-center items-center gap-2">
-                        {actions.map((action, i) => {
-                          const isDisabled = action.disabled?.(row);
-                          return (
-                            <button
+                      {actions.map((action, i) => {
+                        const isHidden = action.hidden?.(row);
+                        if (isHidden) return null;
+                        const isDisabled = action.disabled?.(row);
+                        return (
+                          <button
                               key={i}
                               onClick={() => handleAction(action, row)}
                               disabled={isDisabled}
