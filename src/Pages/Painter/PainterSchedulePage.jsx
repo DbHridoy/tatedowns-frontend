@@ -13,6 +13,7 @@ import {
   addDays,
   buildCalendarSections,
   formatDateKey,
+  groupDelayedItemsByDay,
   groupScheduleItemsByDay,
   normalizeProductionCalendarResponse,
 } from "../../utils/productionCalendar";
@@ -34,7 +35,7 @@ const shiftReferenceDate = (viewMode, referenceDate, direction) => {
 };
 
 const PainterSchedulePage = () => {
-  const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.WEEK);
+  const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.MONTH);
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -80,7 +81,14 @@ const PainterSchedulePage = () => {
     () => groupScheduleItemsByDay(scheduleItems, calendarDays),
     [calendarDays, scheduleItems]
   );
+  const delayedItemsByDay = useMemo(
+    () => groupDelayedItemsByDay(scheduleItems, calendarDays),
+    [calendarDays, scheduleItems]
+  );
   const selectedDayItems = selectedDay?.key ? itemsByDay[selectedDay.key] || [] : [];
+  const selectedDayDelayedItems = selectedDay?.key
+    ? delayedItemsByDay[selectedDay.key] || []
+    : [];
 
   const handleUpdateStatus = async (item, status) => {
     if (!item.canPainterUpdateStatus || item.status === status) return;
@@ -116,6 +124,7 @@ const PainterSchedulePage = () => {
         <ProductionCalendarGrid
           sections={calendarSections}
           itemsByDay={itemsByDay}
+          delayedItemsByDay={delayedItemsByDay}
           canManage={false}
           onDateClick={(day) => setSelectedDay(day)}
           viewMode={viewMode}
@@ -133,6 +142,7 @@ const PainterSchedulePage = () => {
         isOpen={Boolean(selectedDay)}
         day={selectedDay}
         items={selectedDayItems}
+        delayedItems={selectedDayDelayedItems}
         canManage={false}
         canPainterUpdate
         onClose={() => setSelectedDay(null)}

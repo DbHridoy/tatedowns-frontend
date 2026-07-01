@@ -19,6 +19,7 @@ import {
   addDays,
   buildCalendarSections,
   formatDateKey,
+  groupDelayedItemsByDay,
   groupScheduleItemsByDay,
   normalizeProductionCalendarResponse,
 } from "../../utils/productionCalendar";
@@ -42,7 +43,7 @@ const shiftReferenceDate = (viewMode, referenceDate, direction) => {
 const ProductionCalendarPage = () => {
   const role = useSelector(selectUserRole);
   const canManage = role === APP_ROLES.ADMIN || role === APP_ROLES.PRODUCTION_MANAGER;
-  const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.WEEK);
+  const [viewMode, setViewMode] = useState(CALENDAR_VIEW_MODES.MONTH);
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [rainDelayItem, setRainDelayItem] = useState(null);
@@ -87,8 +88,14 @@ const ProductionCalendarPage = () => {
   const itemsByDay = useMemo(() => {
     return groupScheduleItemsByDay(normalizedCalendar.items, calendarDays);
   }, [calendarDays, normalizedCalendar.items]);
+  const delayedItemsByDay = useMemo(() => {
+    return groupDelayedItemsByDay(normalizedCalendar.items, calendarDays);
+  }, [calendarDays, normalizedCalendar.items]);
 
   const selectedDayItems = selectedDay?.key ? itemsByDay[selectedDay.key] || [] : [];
+  const selectedDayDelayedItems = selectedDay?.key
+    ? delayedItemsByDay[selectedDay.key] || []
+    : [];
 
   const handleUpdateStatus = async (item, status) => {
     if (status === item.status) return;
@@ -132,6 +139,7 @@ const ProductionCalendarPage = () => {
         <ProductionCalendarGrid
           sections={calendarSections}
           itemsByDay={itemsByDay}
+          delayedItemsByDay={delayedItemsByDay}
           canManage={canManage}
           onDateClick={(day) => setSelectedDay(day)}
           viewMode={viewMode}
@@ -149,6 +157,7 @@ const ProductionCalendarPage = () => {
         isOpen={Boolean(selectedDay)}
         day={selectedDay}
         items={selectedDayItems}
+        delayedItems={selectedDayDelayedItems}
         canManage={canManage}
         onClose={() => setSelectedDay(null)}
         onUpdateStatus={handleUpdateStatus}

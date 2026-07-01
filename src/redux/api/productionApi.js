@@ -61,10 +61,10 @@ const productionApi = baseApi.injectEndpoints({
     }),
 
     applyRainDelay: builder.mutation({
-      query: ({ scheduleId, delayDays, reason }) => ({
+      query: ({ scheduleId, delayDays, affectedFromDate, reason }) => ({
         url: `/production-calendar/${scheduleId}/rain-delay`,
         method: "POST",
-        body: { delayDays, reason },
+        body: { delayDays, affectedFromDate, reason },
       }),
       invalidatesTags: (result, error, { scheduleId }) => [
         { type: "ProductionSchedule", id: scheduleId },

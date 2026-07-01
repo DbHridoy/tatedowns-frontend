@@ -44,9 +44,17 @@ const ScheduleItemCard = ({
             {formatDateLabel(item.startDate)} - {formatDateLabel(item.endDate)}
           </p>
           {item.isRainDelayed ? (
-            <p className="font-medium text-amber-700">
-              Rain delayed{item.rainDelayDays ? ` (${item.rainDelayDays}d)` : ""}
-            </p>
+            <>
+              <p className="font-medium text-amber-700">
+                Rain delayed{item.rainDelayDays ? ` (${item.rainDelayDays}d)` : ""}
+              </p>
+              {Array.isArray(item.delayedDateKeys) && item.delayedDateKeys.length ? (
+                <p className="text-amber-800">
+                  Delayed dates:{" "}
+                  {item.delayedDateKeys.map((day) => formatDateLabel(day)).join(", ")}
+                </p>
+              ) : null}
+            </>
           ) : null}
         </div>
       ) : item.isRainDelayed ? (
@@ -86,4 +94,3 @@ const ScheduleItemCard = ({
 };
 
 export default ScheduleItemCard;
-

@@ -5,6 +5,7 @@ const ProductionDayModal = ({
   isOpen,
   day,
   items = [],
+  delayedItems = [],
   canManage = false,
   canPainterUpdate = false,
   onClose,
@@ -41,6 +42,19 @@ const ProductionDayModal = ({
       }
     >
       <div className="space-y-4">
+        {delayedItems.length ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">Rain delay on this day</p>
+            <div className="mt-3 space-y-2">
+              {delayedItems.map((item) => (
+                <div key={`delay-${item._id}`} className="rounded-xl bg-white/80 p-3 text-sm text-amber-900">
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-xs text-amber-800">{item.crewName}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {items.length ? (
           items.map((item) => (
             <div key={item._id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
@@ -58,7 +72,12 @@ const ProductionDayModal = ({
                 canManage={canManage}
                 canPainterUpdate={canPainterUpdate}
                 onUpdateStatus={onUpdateStatus}
-                onApplyRainDelay={onApplyRainDelay}
+                onApplyRainDelay={(scheduleItem) =>
+                  onApplyRainDelay?.({
+                    ...scheduleItem,
+                    affectedFromDate: day?.key || "",
+                  })
+                }
               />
             </div>
           ))

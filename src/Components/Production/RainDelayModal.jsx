@@ -22,6 +22,7 @@ const RainDelayModal = ({ isOpen, item, isSubmitting, onClose, onSubmit }) => {
     await onSubmit?.({
       scheduleId: item._id,
       delayDays: Number(delayDays),
+      affectedFromDate: item?.affectedFromDate,
       reason,
     });
   };
@@ -56,6 +57,11 @@ const RainDelayModal = ({ isOpen, item, isSubmitting, onClose, onSubmit }) => {
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           <p className="font-medium">{item?.title || "Selected schedule item"}</p>
           <p className="mt-1 text-amber-800">{item?.crewName || "Crew pending"}</p>
+          {item?.affectedFromDate ? (
+            <p className="mt-1 text-amber-800">
+              Shift work from {new Date(item.affectedFromDate).toLocaleDateString("en-US")}
+            </p>
+          ) : null}
         </div>
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-700">
@@ -87,4 +93,3 @@ const RainDelayModal = ({ isOpen, item, isSubmitting, onClose, onSubmit }) => {
 };
 
 export default RainDelayModal;
-

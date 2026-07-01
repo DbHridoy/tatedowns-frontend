@@ -334,6 +334,29 @@ export const normalizeScheduleItem = (item) => {
   const painterNames = Array.isArray(item?.crew?.painters)
     ? item.crew.painters.map((painter) => painter?.fullName).filter(Boolean)
     : [];
+  const scheduleSegments = Array.isArray(item?.scheduleSegments)
+    ? item.scheduleSegments
+        .map((segment) => ({
+          startDate: segment?.startDate ? formatDateKey(segment.startDate) : "",
+          endDate: segment?.endDate ? formatDateKey(segment.endDate) : "",
+        }))
+        .filter((segment) => segment.startDate && segment.endDate)
+    : [];
+  const delayedDateKeys = scheduleSegments.reduce((dates, segment, index) => {
+    if (index === 0) return dates;
+
+    const previousSegment = scheduleSegments[index - 1];
+    let current = addDays(previousSegment.endDate, 1);
+    const delayedUntil = addDays(segment.startDate, -1);
+
+    while (startOfDay(current) <= startOfDay(delayedUntil)) {
+      dates.push(formatDateKey(current));
+      current = addDays(current, 1);
+    }
+
+    return dates;
+  }, []);
+  const visibleRainDelayDays = delayedDateKeys.length;
 
   return {
     _id: item?._id || item?.id || "",
@@ -370,9 +393,12 @@ export const normalizeScheduleItem = (item) => {
     displayOrder: Number(item?.displayOrder) || 0,
     estimatedLaborHours:
       Number(item?.estimatedLaborHours) || Number(item?.job?.totalHours) || 0,
+    scheduleSegments,
+    delayedDateKeys,
     rainDelayHistory,
     isRainDelayed: Boolean(item?.isRainDelayed || item?.rainDelayDays || rainDelayHistory.length),
-    rainDelayDays:
+    rainDelayDays: visibleRainDelayDays,
+    totalRainDelayDays:
       Number(item?.rainDelayDays) ||
       rainDelayHistory.reduce(
         (total, entry) => total + Number(entry?.delayDays || 0),
@@ -422,8 +448,36 @@ export const groupScheduleItemsByDay = (items = [], days = []) => {
   return lookup;
 };
 
+export const groupDelayedItemsByDay = (items = [], days = []) => {
+  const lookup = {};
+
+  items.forEach((item) => {
+    const delayedKeys = Array.isArray(item?.delayedDateKeys) ? item.delayedDateKeys : [];
+
+    delayedKeys.forEach((dayKey) => {
+      if (!days.some((day) => day.key === dayKey)) return;
+      lookup[dayKey] = lookup[dayKey] || [];
+      lookup[dayKey].push(item);
+    });
+  });
+
+  Object.keys(lookup).forEach((key) => {
+    lookup[key] = sortScheduleItems(lookup[key]);
+  });
+
+  return lookup;
+};
+
 export const isScheduleItemOnDay = (item, dayKey) => {
   if (!item?.startDate || !item?.endDate) return false;
+  if (Array.isArray(item?.scheduleSegments) && item.scheduleSegments.length) {
+    return item.scheduleSegments.some((segment) => {
+      const day = startOfDay(dayKey);
+      const start = startOfDay(segment.startDate);
+      const end = endOfDay(segment.endDate);
+      return day >= start && day <= end;
+    });
+  }
   const day = startOfDay(dayKey);
   const start = startOfDay(item.startDate);
   const end = endOfDay(item.endDate);

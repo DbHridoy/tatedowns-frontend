@@ -17,6 +17,7 @@ const getSectionColumns = (sections) => {
 const ProductionCalendarGrid = ({
   sections,
   itemsByDay,
+  delayedItemsByDay = {},
   onDateClick,
   viewMode,
   referenceDate,
@@ -84,6 +85,7 @@ const ProductionCalendarGrid = ({
             <div className={`grid ${section.layout === "day" ? "grid-cols-1" : "grid-cols-7"}`}>
               {section.days.map((day) => {
                 const dayItems = itemsByDay[day.key] || [];
+                const delayedItems = delayedItemsByDay[day.key] || [];
 
                 return (
                   <button
@@ -114,6 +116,17 @@ const ProductionCalendarGrid = ({
                     </div>
 
                     <div className="mt-2 space-y-1.5">
+                      {delayedItems.length ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] text-amber-900">
+                          <p className="truncate font-semibold">
+                            Rain delay
+                          </p>
+                          <p className="truncate opacity-80">
+                            {delayedItems[0]?.title}
+                            {delayedItems.length > 1 ? ` +${delayedItems.length - 1} more` : ""}
+                          </p>
+                        </div>
+                      ) : null}
                       {dayItems.slice(0, 3).map((item) => (
                         <div
                           key={item._id}
