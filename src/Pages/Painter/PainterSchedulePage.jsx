@@ -147,6 +147,7 @@ const PainterSchedulePage = () => {
         canPainterUpdate
         onClose={() => setSelectedDay(null)}
         onUpdateStatus={handleUpdateStatus}
+        onUpdatePainterHours={undefined}
       />
     </div>
   );

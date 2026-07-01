@@ -10,6 +10,7 @@ const ProductionDayModal = ({
   canPainterUpdate = false,
   onClose,
   onUpdateStatus,
+  onUpdatePainterHours,
   onApplyRainDelay,
 }) => {
   const formattedDate = day?.date
@@ -69,9 +70,11 @@ const ProductionDayModal = ({
 
               <ScheduleItemCard
                 item={item}
+                selectedDateKey={day?.key || ""}
                 canManage={canManage}
                 canPainterUpdate={canPainterUpdate}
                 onUpdateStatus={onUpdateStatus}
+                onUpdatePainterHours={onUpdatePainterHours}
                 onApplyRainDelay={(scheduleItem) =>
                   onApplyRainDelay?.({
                     ...scheduleItem,

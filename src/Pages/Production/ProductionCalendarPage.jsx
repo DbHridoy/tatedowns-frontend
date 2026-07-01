@@ -10,6 +10,7 @@ import {
   useApplyRainDelayMutation,
   useGetCrewsQuery,
   useGetProductionCalendarScheduleQuery,
+  useUpdateScheduleItemMutation,
   useUpdateScheduleStatusMutation,
 } from "../../redux/api/productionApi";
 import { selectUserRole } from "../../redux/slice/authSlice";
@@ -79,6 +80,7 @@ const ProductionCalendarPage = () => {
     });
   const [applyRainDelay, { isLoading: isApplyingRainDelay }] =
     useApplyRainDelayMutation();
+  const [updateScheduleItem] = useUpdateScheduleItemMutation();
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
 
   const normalizedCalendar = useMemo(
@@ -106,6 +108,20 @@ const ProductionCalendarPage = () => {
       toast.success("Schedule status updated.");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to update status.");
+    }
+  };
+
+  const handleUpdatePainterHours = async (item, workDate, painterHours) => {
+    try {
+      await updateScheduleItem({
+        scheduleId: item._id,
+        workDate,
+        painterHours,
+      }).unwrap();
+      await refetchCalendar();
+      toast.success("Painter hours updated.");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update painter hours.");
     }
   };
 
@@ -161,6 +177,7 @@ const ProductionCalendarPage = () => {
         canManage={canManage}
         onClose={() => setSelectedDay(null)}
         onUpdateStatus={handleUpdateStatus}
+        onUpdatePainterHours={handleUpdatePainterHours}
         onApplyRainDelay={(item) => setRainDelayItem(item)}
       />
 

@@ -13,6 +13,15 @@ import {
 } from "../../redux/api/productionApi";
 import { normalizeCrew, normalizePainter } from "../../utils/productionCalendar";
 
+const formatExcelDateLabel = (value) => {
+  if (!value) return "";
+  return new Date(`${value}T00:00:00.000Z`).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+};
+
 const PainterManagementPage = () => {
   const [editingPainter, setEditingPainter] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,11 +40,21 @@ const PainterManagementPage = () => {
     () => (paintersData?.data || []).map(normalizePainter),
     [paintersData?.data]
   );
+  const exportDateColumns = useMemo(() => {
+    const dates = new Set();
+    painters.forEach((painter) => {
+      (painter.dailyWorkedHours || []).forEach((entry) => {
+        if (entry?.workDate) dates.add(entry.workDate);
+      });
+    });
+    return [...dates].sort();
+  }, [painters]);
 
   const tableConfig = {
     columns: [
       { label: "No", accessor: "No" },
       { label: "Painter", accessor: "fullName", sortable: true },
+      { label: "Total Hours", accessor: "totalWorkedHours", sortable: true },
       { label: "Email", accessor: "email" },
       { label: "Status", accessor: "status" },
       { label: "Crew", accessor: "crewName" },
@@ -121,6 +140,82 @@ const PainterManagementPage = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!painters.length) {
+      toast.error("No painter data to export.");
+      return;
+    }
+
+    const headerColumns = [
+      "Painter Name",
+      "Email",
+      "Status",
+      "Crew",
+      "Total Hours",
+      ...exportDateColumns.map(formatExcelDateLabel),
+    ];
+
+    const escapeCell = (value) =>
+      String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const rows = painters.map((painter) => {
+      const hoursByDate = new Map(
+        (painter.dailyWorkedHours || []).map((entry) => [entry.workDate, entry.hours])
+      );
+
+      return [
+        painter.fullName,
+        painter.email,
+        painter.status,
+        painter.crewName,
+        painter.totalWorkedHours,
+        ...exportDateColumns.map((date) => hoursByDate.get(date) ?? 0),
+      ];
+    });
+
+    const tableHtml = `
+      <table>
+        <thead>
+          <tr>${headerColumns.map((column) => `<th>${escapeCell(column)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${rows
+            .map(
+              (row) =>
+                `<tr>${row.map((cell) => `<td>${escapeCell(cell)}</td>`).join("")}</tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+
+    const workbookHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:x="urn:schemas-microsoft-com:office:excel"
+            xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8" />
+        </head>
+        <body>${tableHtml}</body>
+      </html>
+    `;
+
+    const blob = new Blob([workbookHtml], {
+      type: "application/vnd.ms-excel;charset=utf-8;",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `painters-hours-${new Date().toISOString().slice(0, 10)}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="page-container space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -130,6 +225,13 @@ const PainterManagementPage = () => {
             Create painter accounts, update their status, and place them on the right crew.
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleExportExcel}
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Export Excel
+        </button>
         <button
           type="button"
           onClick={() => {

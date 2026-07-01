@@ -311,6 +311,13 @@ export const normalizePainter = (painter) => ({
     painter?.crew ||
     null,
   crewName: painter?.crewId?.name || painter?.crew?.name || "Unassigned",
+  totalWorkedHours: Number(painter?.totalWorkedHours) || 0,
+  dailyWorkedHours: Array.isArray(painter?.dailyWorkedHours)
+    ? painter.dailyWorkedHours.map((entry) => ({
+        workDate: entry?.workDate || "",
+        hours: Number(entry?.hours) || 0,
+      }))
+    : [],
 });
 
 export const normalizeScheduleItem = (item) => {
@@ -328,11 +335,41 @@ export const normalizeScheduleItem = (item) => {
     item?.crewId?._id || item?.crewId || item?.crew?._id || item?.crew || "";
   const jobId = item?.jobId?._id || item?.jobId || item?.job?._id || item?.job || "";
   const client = item?.client || item?.clientId || item?.job?.clientId;
+  const rawCrewPainters = Array.isArray(item?.crew?.painters)
+    ? item.crew.painters
+    : Array.isArray(item?.crewId?.painters)
+      ? item.crewId.painters
+      : Array.isArray(item?.painters)
+        ? item.painters
+        : [];
   const rainDelayHistory = Array.isArray(item?.rainDelayHistory)
     ? item.rainDelayHistory
     : [];
-  const painterNames = Array.isArray(item?.crew?.painters)
-    ? item.crew.painters.map((painter) => painter?.fullName).filter(Boolean)
+  const painterNames = rawCrewPainters.map((painter) => painter?.fullName || painter?.name).filter(Boolean);
+  const crewPainters = rawCrewPainters.map((painter) => ({
+        _id: painter?._id || painter?.id || "",
+        fullName: painter?.fullName || painter?.name || "Unnamed Painter",
+        email: painter?.email || "",
+        role: painter?.role || "",
+      }));
+  const painterDailyHours = Array.isArray(item?.painterDailyHours)
+    ? item.painterDailyHours
+        .map((entry) => ({
+          workDate: entry?.workDate ? formatDateKey(entry.workDate) : "",
+          painterHours: Array.isArray(entry?.painterHours)
+            ? entry.painterHours.map((hoursEntry) => ({
+                painterId:
+                  hoursEntry?.painter?._id ||
+                  hoursEntry?.painter?.id ||
+                  hoursEntry?.painterId ||
+                  hoursEntry?.painter ||
+                  "",
+                painterName: hoursEntry?.painter?.fullName || "",
+                hours: Number(hoursEntry?.hours) || 0,
+              }))
+            : [],
+        }))
+        .filter((entry) => entry.workDate)
     : [];
   const scheduleSegments = Array.isArray(item?.scheduleSegments)
     ? item.scheduleSegments
@@ -405,6 +442,8 @@ export const normalizeScheduleItem = (item) => {
         0
       ),
     painterNames,
+    crewPainters,
+    painterDailyHours,
     canPainterUpdateStatus: Boolean(
       item?.canPainterUpdateStatus ??
         item?.permissions?.canPainterUpdateStatus
