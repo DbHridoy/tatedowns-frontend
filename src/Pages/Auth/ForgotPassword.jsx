@@ -31,7 +31,7 @@ function ForgetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10 sm:px-6">
-      <div className="w-full mx-auto">
+      <div className="w-full max-w-md mx-auto">
         <div className="bg-white shadow-lg rounded-lg p-6 sm:p-8">
           {/* Header */}
           <div className="mb-8">

@@ -22,7 +22,7 @@ const UserManagement = () => {
   });
 
   /* ================= API ================= */
-  const { data: allUsersData } = useGetAllUsersQuery({
+  const { data: allUsersData, isLoading } = useGetAllUsersQuery({
     page: 1,
     limit: 0,
   });
@@ -180,6 +180,7 @@ const UserManagement = () => {
         title="Users"
         data={pagedUsers}
         config={tableConfig}
+        loading={isLoading}
       />
 
       {/* ADD */}

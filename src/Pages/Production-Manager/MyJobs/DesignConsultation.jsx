@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCreateDesignConsultationMutation } from "../../../redux/api/jobApi";
 import toast from "react-hot-toast";
@@ -18,7 +18,8 @@ const DesignConsultationCreate = ({
   onSaved,
   mode = "create",
 }) => {
-  const [createDesignConsultation] = useCreateDesignConsultationMutation();
+  const [createDesignConsultation, { isLoading: isSaving }] =
+    useCreateDesignConsultationMutation();
 
   const navigate = useNavigate();
   const { jobId } = useParams();
@@ -258,7 +259,7 @@ const DesignConsultationCreate = ({
         </label>
         <input
           type="file"
-          accept=".pdf,.docx,.xlsx"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
           onChange={handleFileChange}
           required={!existingFileUrl}
         />
@@ -273,15 +274,23 @@ const DesignConsultationCreate = ({
         <button
           type="button"
           onClick={() => (onCancel ? onCancel() : navigate(-1))}
+          disabled={isSaving}
           className="bg-gray-400 px-6 py-2 rounded text-white"
         >
           Cancel
         </button>
         <button
           type="submit"
+          disabled={isSaving}
           className="bg-blue-600 px-6 py-2 rounded text-white"
         >
-          {mode === "edit" ? "Update DC" : "Create DC"}
+          {isSaving
+            ? mode === "edit"
+              ? "Updating DC..."
+              : "Creating DC..."
+            : mode === "edit"
+              ? "Update DC"
+              : "Create DC"}
         </button>
       </div>
     </form>

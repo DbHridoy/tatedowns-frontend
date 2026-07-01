@@ -17,7 +17,7 @@ const SalesRepSidebar = () => {
 
   const menuItems = [
     { icon: <FiHome className="w-5 h-5" />, label: "Home", Link: "/s/sales-rep/home" },
-    { icon: <FiUsers className="w-5 h-5" />, label: "Clients / Leads", Link: "/s/sales-rep/clients" },
+    { icon: <FiUsers className="w-5 h-5" />, label: "Clients / Leads", Link: "/s/sales-rep/leads" },
     { icon: <FiFileText className="w-5 h-5" />, label: "Quotes", Link: "/s/sales-rep/quotes" },
     { icon: <FiBriefcase className="w-5 h-5" />, label: "Jobs", Link: "/s/sales-rep/jobs" },
     { icon: <FiFileText className="w-5 h-5" />, label: "Design Consultation", Link: "/s/sales-rep/design-consultation" },

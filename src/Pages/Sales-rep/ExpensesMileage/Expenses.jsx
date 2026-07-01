@@ -5,6 +5,7 @@ import { useGetAllMileageLogsQuery } from "../../../redux/api/expenseApi";
 import DataTable from "../../../Components/Common/DataTable";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../../redux/slice/authSlice";
+import formatCurrency from "../../../utils/formatCurrency";
 
 function UserExpenses() {
   const user = useSelector(selectCurrentUser);
@@ -16,7 +17,7 @@ function UserExpenses() {
     sortOrder: "asc",
     filters: { salesRepId: user?._id },
   });
-  const { data: mileageLogs } = useGetAllMileageLogsQuery(params);
+  const { data: mileageLogs, isLoading } = useGetAllMileageLogsQuery(params);
 
   const mileageLogsData = mileageLogs?.data ?? [];
   const totalItems = mileageLogs?.total ?? 0;
@@ -35,7 +36,7 @@ function UserExpenses() {
       { label: "No", accessor: "No" },
       { label: "Date", accessor: "createdAt", sortable: true },
       { label: "Total Miles Driven", accessor: "totalMilesDriven" },
-      { label: "Deduction (USD)", accessor: "deduction" },
+      { label: "Deduction (USD)", accessor: "deduction", format: formatCurrency },
       { label: "Status", accessor: "status", colorMap: { "Pending": "bg-yellow-100 text-yellow-700 rounded-2xl text-center p-2", "Approved": "bg-green-100 text-green-800 rounded-2xl text-center p-2", "Rejected": "bg-red-100 text-red-700 rounded-2xl text-center p-2" } },
     ],
     filters: [],
@@ -65,6 +66,7 @@ function UserExpenses() {
         title="Mileage Logs"
         data={mileageLogsData}
         config={tableConfig}
+        loading={isLoading}
       />
     </div>
   );

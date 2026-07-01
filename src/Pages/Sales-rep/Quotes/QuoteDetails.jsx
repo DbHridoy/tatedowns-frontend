@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useGetQuoteByIdQuery,
+  useDeleteQuoteMutation,
   useUpdateQuoteMutation,
 } from "../../../redux/api/quoteApi";
 import toast from "react-hot-toast";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
+import DeleteModal from "../../../Components/Common/DeleteModal";
 
 const getFileName = (url = "") => {
   const parts = decodeURIComponent(url).split("/");
@@ -25,10 +28,12 @@ const QuoteDetails = () => {
 
   const { data: quoteData, isLoading } = useGetQuoteByIdQuery(quoteId);
   const [updateQuote, { isLoading: isUpdating }] = useUpdateQuoteMutation();
+  const [deleteQuote, { isLoading: isDeleting }] = useDeleteQuoteMutation();
 
   const quote = quoteData?.data;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState(null);
   const [bidSheetFile, setBidSheetFile] = useState(null);
 
@@ -68,12 +73,24 @@ const QuoteDetails = () => {
 
   const handleSave = async () => {
     try {
+      if (normalizeStatus(quote?.status) === "Approved") {
+        toast.error("Approved quotes cannot be edited");
+        setIsEditing(false);
+        return;
+      }
       const payload = new FormData();
+      const currentStatus = normalizeStatus(quote?.status);
+      const lockedStatus =
+        currentStatus === "Approved" ? "Approved" : normalizeStatus(formData?.status);
 
       // append text fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          payload.append(key, value);
+          if (key === "status") {
+            payload.append("status", lockedStatus);
+          } else {
+            payload.append(key, value);
+          }
         }
       });
 
@@ -82,10 +99,6 @@ const QuoteDetails = () => {
         payload.append("bidSheet", bidSheetFile);
       }
       payload.append("_dummy", "true");
-      // ✅ correct debug
-      for (let [key, value] of payload.entries()) {
-        //console.log(key, value);
-      }
 
       await updateQuote({
         id: quote._id,
@@ -94,8 +107,8 @@ const QuoteDetails = () => {
       toast.success("Quote updated successfully")
       setIsEditing(false);
       setBidSheetFile(null);
-      if (normalizeStatus(formData.status) === "Approved") {
-        navigate(`/sales-rep/add-job?quoteId=${quote._id}`);
+      if (lockedStatus === "Approved") {
+        navigate(`/sales-rep/jobs/add-job?quoteId=${quote._id}`);
       }
     } catch (err) {
       console.error("Update failed", err);
@@ -115,12 +128,23 @@ const QuoteDetails = () => {
     });
   };
 
-  const handleConvertToJob = () => {
-    navigate(`/s/sales-rep/jobs/create-job/${quote._id}`);
+  const handleDelete = async () => {
+    try {
+      await deleteQuote({
+        id: quote._id,
+        clientId: quote?.clientId?._id ?? quote?.clientId,
+      });
+      toast.success("Quote deleted successfully");
+      setShowDeleteModal(false);
+      navigate("/sales-rep/quotes");
+    } catch (err) {
+      console.error("Delete failed", err);
+      toast.error("Failed to delete quote");
+    }
   };
 
   if (isLoading || !quote) {
-    return <div className="p-6">Loading...</div>;
+    return <SimpleLoader />;
   }
 
   const {
@@ -135,6 +159,7 @@ const QuoteDetails = () => {
     customQuoteId,
   } = quote;
   const normalizedStatus = normalizeStatus(status);
+  const isApprovedStatus = normalizedStatus === "Approved";
   const notesList = Array.isArray(quoteNotes)
     ? quoteNotes
     : quoteNotes
@@ -198,6 +223,7 @@ const QuoteDetails = () => {
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
+                  disabled={isApprovedStatus}
                   className="border rounded px-3 py-2 text-sm sm:text-base"
                 >
                   <option value="Pending">Pending</option>
@@ -334,17 +360,29 @@ const QuoteDetails = () => {
               </button> */}
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full sm:flex-1 border py-2.5 sm:py-3 rounded text-sm sm:text-base"
+                disabled={isApprovedStatus}
+                className={`w-full sm:flex-1 border py-2.5 sm:py-3 rounded text-sm sm:text-base ${
+                  isApprovedStatus ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 Edit Quote
               </button>
-              <button className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-3 rounded text-sm sm:text-base">
-                Delete
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                disabled={isDeleting}
+                className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-3 rounded text-sm sm:text-base disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </>
           )}
         </div>
       </div>
+      <DeleteModal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

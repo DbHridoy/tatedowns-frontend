@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import {
@@ -9,6 +9,7 @@ import {
   useAddNoteMutation,
 } from "../../../redux/api/clientApi";
 import AddCallLog from "../../Sales-rep/Clients/AddCallLog";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 /* -------------------- Utils -------------------- */
 const isImageFile = (url) => {
@@ -27,16 +28,14 @@ const getFileNameFromUrl = (url) => {
 /* -------------------- Component -------------------- */
 const AdminClientDetails = () => {
   const { clientId } = useParams();
-  const navigate = useNavigate();
-
   const { data, isLoading, isError, refetch } = useGetClientByIdQuery(
     clientId,
     { skip: !clientId }
   );
 
-  const [updateClient] = useUpdateClientMutation();
-  const [addCallLog] = useAddCallLogMutation();
-  const [addNote] = useAddNoteMutation();
+  const [updateClient, { isLoading: isSavingClient }] = useUpdateClientMutation();
+  const [addCallLog, { isLoading: isAddingCallLog }] = useAddCallLogMutation();
+  const [addNote, { isLoading: isAddingNote }] = useAddNoteMutation();
 
   const client = data?.data;
 
@@ -46,9 +45,13 @@ const AdminClientDetails = () => {
 
   const [form, setForm] = useState({
     clientName: "",
+    partnerName: "",
     email: "",
     phoneNumber: "",
     address: "",
+    city: "",
+    state: "",
+    zipCode: "",
     leadSource: "",
     rating: 0,
   });
@@ -64,9 +67,13 @@ const AdminClientDetails = () => {
 
     setForm({
       clientName: client.clientName || "",
+      partnerName: client.partnerName || "",
       email: client.email || "",
       phoneNumber: client.phoneNumber || "",
       address: client.address || "",
+      city: client.city || "",
+      state: client.state || "",
+      zipCode: client.zipCode || "",
       leadSource: client.leadSource || "",
       rating: client.rating || 0,
     });
@@ -94,9 +101,13 @@ const AdminClientDetails = () => {
 
     setForm({
       clientName: client.clientName || "",
+      partnerName: client.partnerName || "",
       email: client.email || "",
       phoneNumber: client.phoneNumber || "",
       address: client.address || "",
+      city: client.city || "",
+      state: client.state || "",
+      zipCode: client.zipCode || "",
       leadSource: client.leadSource || "",
       rating: client.rating || 0,
     });
@@ -119,13 +130,13 @@ const AdminClientDetails = () => {
       setNoteText("");
       setNoteFile(null);
       refetch();
-    } catch (err) {
+    } catch {
       toast.error("Failed to add note");
     }
   };
 
   /* -------------------- UI States -------------------- */
-  if (isLoading) return <div className="p-6">Loading...</div>;
+  if (isLoading) return <SimpleLoader />;
   if (isError || !client)
     return <div className="p-6">Failed to load client</div>;
 
@@ -160,9 +171,10 @@ const AdminClientDetails = () => {
           <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handleSaveClient}
+              disabled={isSavingClient}
               className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded text-sm sm:text-base"
             >
-              Save
+              {isSavingClient ? "Saving..." : "Save"}
             </button>
             <button
               onClick={handleCancelEdit}
@@ -181,9 +193,9 @@ const AdminClientDetails = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             ["Name", "clientName"],
+            ["Partner Name", "partnerName"],
             ["Email", "email"],
             ["Phone", "phoneNumber"],
-            ["Address", "address"],
           ].map(([label, field]) => (
             <div key={field} className="sm:col-span-1">
               <label className="block text-sm font-medium mb-1">{label}</label>
@@ -198,6 +210,49 @@ const AdminClientDetails = () => {
               />
             </div>
           ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            ["Street Address", "address"],
+            ["City", "city"],
+            ["State", "state"],
+            ["Zip Code", "zipCode"],
+          ].map(([label, field]) => (
+            <div key={field} className="sm:col-span-1">
+              <label className="block text-sm font-medium mb-1">{label}</label>
+              <input
+                type="text"
+                value={form[field]}
+                disabled={!isEditing}
+                onChange={(e) => handleChange(field, e.target.value)}
+                className={`w-full p-2 border rounded text-sm sm:text-base ${
+                  !isEditing ? "bg-gray-100" : ""
+                }`}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Lead Status</label>
+            <input
+              type="text"
+              value={client.leadStatus || "—"}
+              disabled
+              className="w-full p-2 border rounded text-sm sm:text-base bg-gray-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Call Status</label>
+            <input
+              type="text"
+              value={client.callStatus || "—"}
+              disabled
+              className="w-full p-2 border rounded text-sm sm:text-base bg-gray-100"
+            />
+          </div>
         </div>
 
         {/* Lead Source */}
@@ -296,9 +351,10 @@ const AdminClientDetails = () => {
 
         <button
           onClick={handleAddNote}
+          disabled={isAddingNote}
           className="w-full bg-gray-100 p-2 rounded text-sm sm:text-base"
         >
-          Add Note
+          {isAddingNote ? "Adding Note..." : "Add Note"}
         </button>
 
         {client.notes?.length > 0 ? (
@@ -347,6 +403,7 @@ const AdminClientDetails = () => {
       {showCallModal && (
         <AddCallLog
           clientId={clientId}
+          isSubmitting={isAddingCallLog}
           closeModal={() => {
             setShowCallModal(false);
             refetch();

@@ -4,12 +4,12 @@ import FinancialDetails from "../../../Components/Sales-rep/Jobs/FinancialDetail
 import DC from "../../../Components/Sales-rep/Jobs/DC";
 import { useState } from "react";
 import { useGetJobByIdQuery } from "../../../redux/api/jobApi";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 const PmJobDetails = () => {
   const { jobId } = useParams();
   const [isEditing, setIsEditing] = useState(false);
-  const navigate = useNavigate();
 
   const { data, isLoading, isError } = useGetJobByIdQuery(jobId, {
     skip: !jobId,
@@ -17,7 +17,7 @@ const PmJobDetails = () => {
 
   const job = data?.data;
 
-  if (isLoading) return <p className="p-6">Loading job details...</p>;
+  if (isLoading) return <SimpleLoader text="Loading job details..." />;
   if (isError || !job) return <p className="p-6 text-red-500">Job not found</p>;
 
   const client = job.clientId;
@@ -79,8 +79,20 @@ const PmJobDetails = () => {
               {client?.phoneNumber || "N/A"}
             </p>
             <p>
-              <span className="font-semibold">Address:</span>{" "}
+              <span className="font-semibold">Street Address:</span>{" "}
               {client?.address || "N/A"}
+            </p>
+            <p>
+              <span className="font-semibold">City:</span>{" "}
+              {client?.city || "N/A"}
+            </p>
+            <p>
+              <span className="font-semibold">State:</span>{" "}
+              {client?.state || "N/A"}
+            </p>
+            <p>
+              <span className="font-semibold">Zip Code:</span>{" "}
+              {client?.zipCode || "N/A"}
             </p>
             <p>
               <span className="font-semibold">Lead Source:</span>{" "}

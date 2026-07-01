@@ -1,10 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
+  useDeleteQuoteMutation,
   useGetQuoteByIdQuery,
   useUpdateQuoteMutation,
 } from "../../../redux/api/quoteApi";
 import toast from "react-hot-toast";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
+import DeleteModal from "../../../Components/Common/DeleteModal";
+
+const getFileName = (url = "") => {
+  const parts = decodeURIComponent(url).split("/");
+  return parts[parts.length - 1] || "File";
+};
 
 const AdminQuoteDetails = () => {
   const { quoteId } = useParams();
@@ -12,10 +20,12 @@ const AdminQuoteDetails = () => {
 
   const { data: quoteData, isLoading } = useGetQuoteByIdQuery(quoteId);
   const [updateQuote, { isLoading: isUpdating }] = useUpdateQuoteMutation();
+  const [deleteQuote, { isLoading: isDeleting }] = useDeleteQuoteMutation();
 
   const quote = quoteData?.data;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState(null);
   const [bidSheetFile, setBidSheetFile] = useState(null);
 
@@ -60,10 +70,6 @@ const AdminQuoteDetails = () => {
         payload.append("bidSheet", bidSheetFile);
       }
       payload.append("_dummy", "true");
-      // ✅ correct debug
-      for (let [key, value] of payload.entries()) {
-        //console.log(key, value);
-      }
 
       await updateQuote({
         id: quote._id,
@@ -91,12 +97,23 @@ const AdminQuoteDetails = () => {
     });
   };
 
-  const handleConvertToJob = () => {
-    navigate(`/s/sales-rep/jobs/create-job/${quote._id}`);
+  const handleDelete = async () => {
+    try {
+      await deleteQuote({
+        id: quote._id,
+        clientId: quote?.clientId?._id ?? quote?.clientId,
+      });
+      toast.success("Quote deleted successfully");
+      setShowDeleteModal(false);
+      navigate("/admin/quotes");
+    } catch (err) {
+      console.error("Delete failed", err);
+      toast.error("Failed to delete quote");
+    }
   };
 
   if (isLoading || !quote) {
-    return <div className="p-6">Loading...</div>;
+    return <SimpleLoader />;
   }
 
   const {
@@ -107,9 +124,16 @@ const AdminQuoteDetails = () => {
     status,
     bookedOnSpot,
     bidSheet,
+    bidSheetUrl,
     createdAt,
     customQuoteId,
   } = quote;
+  const bidSheetSource = bidSheetUrl ?? bidSheet;
+  const bidSheets = Array.isArray(bidSheetSource)
+    ? bidSheetSource
+    : bidSheetSource
+      ? [{ bidSheetUrl: bidSheetSource }]
+      : [];
 
   /* ---------------- UI ---------------- */
   return (
@@ -233,20 +257,25 @@ const AdminQuoteDetails = () => {
         <div className="bg-white border rounded-lg section-pad">
           <h3 className="font-semibold mb-3">Bid Sheet</h3>
 
-          {bidSheet && !isEditing && (
-            <a
-              href={bidSheet}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              View Current Bid Sheet
-            </a>
+          {bidSheets.length > 0 && !isEditing && (
+            <div className="space-y-2">
+              {bidSheets.map((sheet) => (
+                <a
+                  key={sheet._id || sheet.id || sheet.bidSheetUrl}
+                  href={sheet.bidSheetUrl || sheet}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-600 underline"
+                >
+                  {getFileName(sheet.bidSheetUrl || sheet)}
+                </a>
+              ))}
+            </div>
           )}
 
           {isEditing && (
             <div className="space-y-2">
-              {bidSheet && (
+              {bidSheets.length > 0 && (
                 <p className="text-sm text-gray-600">
                   Current file will be replaced if you upload a new one
                 </p>
@@ -300,13 +329,22 @@ const AdminQuoteDetails = () => {
               >
                 Edit Quote
               </button>
-              <button className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-3 rounded text-sm sm:text-base">
-                Delete
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                disabled={isDeleting}
+                className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-3 rounded text-sm sm:text-base disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </>
           )}
         </div>
       </div>
+      <DeleteModal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

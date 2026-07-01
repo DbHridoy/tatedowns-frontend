@@ -1,25 +1,25 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SalesRepresentativeModal from "./SalesRepresentativeModal";
 import { useGetAllClientsQuery } from "../../../redux/api/clientApi";
-import { useGetAllUsersQuery } from "../../../redux/api/userApi";
+import SimpleLoader from "../../Common/SimpleLoader";
 
 function SalesAssignement() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
 
   const { data: clientData, isLoading: clientsLoading } = useGetAllClientsQuery(
     { filters: { salesRepId: null } }
   );
-  const leadAssignmentData = clientData?.data || [];
+  const leadAssignmentData = (clientData?.data || []).filter(
+    (client) => client?.leadStatus === "Not quoted"
+  );
   //console.log("Salesassignment", leadAssignmentData);
   const isLoading = clientsLoading;
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-6">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
+    return <SimpleLoader />;
   }
 
   return (
@@ -48,6 +48,18 @@ function SalesAssignement() {
                 Phone Number
               </th>
               <th className="px-4 sm:px-6 py-3 text-xs font-semibold text-left text-gray-700 uppercase">
+                Email
+              </th>
+              <th className="px-4 sm:px-6 py-3 text-xs font-semibold text-left text-gray-700 uppercase">
+                Lead Source
+              </th>
+              <th className="px-4 sm:px-6 py-3 text-xs font-semibold text-left text-gray-700 uppercase">
+                Call Status
+              </th>
+              <th className="px-4 sm:px-6 py-3 text-xs font-semibold text-left text-gray-700 uppercase">
+                Created At
+              </th>
+              <th className="px-4 sm:px-6 py-3 text-xs font-semibold text-left text-gray-700 uppercase">
                 Actions
               </th>
             </tr>
@@ -74,15 +86,28 @@ function SalesAssignement() {
                     </span>
                   </div>
                 </td>
-                {/* <td className="px-6 py-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium`}
-                  >
-                    {item.status}
-                  </span>
-                </td> */}
+                <td className="px-4 sm:px-6 py-4 text-sm text-gray-800">
+                  {item.email || "—"}
+                </td>
+                <td className="px-4 sm:px-6 py-4 text-sm text-gray-800">
+                  {item.leadSource || "—"}
+                </td>
+                <td className="px-4 sm:px-6 py-4 text-sm text-gray-800">
+                  {item.callStatus || "—"}
+                </td>
+                <td className="px-4 sm:px-6 py-4 text-sm text-gray-800">
+                  {item.createdAt
+                    ? new Date(item.createdAt).toLocaleDateString()
+                    : "—"}
+                </td>
                 <td className="px-4 sm:px-6 py-4">
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => navigate(`/admin/leads/${item._id}`)}
+                      className="px-4 py-2 text-sm font-medium text-white transition-colors bg-indigo-500 rounded hover:bg-indigo-600"
+                    >
+                      View
+                    </button>
                     {item.salesRepId ? (
                       // Show the sales rep name
                       <span className="px-4 py-2 text-sm font-medium text-gray-800 bg-gray-100 rounded">

@@ -1,4 +1,3 @@
-import { FiBell } from "react-icons/fi";
 import { useGetMeQuery } from "../redux/api/userApi";
 
 const SalesRepTopbar = () => {
@@ -20,12 +19,6 @@ const SalesRepTopbar = () => {
 
       {/* Right section */}
       <div className="flex items-center gap-5">
-        {/* Notification */}
-        <button className="relative hover:text-gray-900 transition-colors">
-          <FiBell className="w-6 h-6" />
-          <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-
         {/* User avatar + info */}
         <div className="flex items-center gap-3 cursor-pointer">
           <img

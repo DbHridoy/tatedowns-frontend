@@ -66,6 +66,11 @@ const expenseApi = baseApi.injectEndpoints({
         { type: "Expense", id: "LIST" },
       ],
     }),
+
+    getMileageLogById: builder.query({
+      query: (id) => `/expenses/mileage/${id}`,
+      providesTags: (result, error, id) => [{ type: "Expense", id }],
+    }),
   }),
 });
 
@@ -73,6 +78,7 @@ export const {
   useCreateMileageLogMutation,
   useGetAllMileageLogsQuery,
   useUpdateMileageLogStatusMutation,
+  useGetMileageLogByIdQuery,
   useGetExpenseSettingsQuery,
   useUpdateExpenseSettingsMutation,
 } = expenseApi;

@@ -64,14 +64,38 @@ const quoteApi = baseApi.injectEndpoints({
     }),
 
     deleteQuote: builder.mutation({
-      query: (id) => ({
+      query: (arg) => {
+        const id = typeof arg === "string" ? arg : arg?.id;
+
+        return {
         url: `/quotes/${id}`,
         method: "DELETE",
-      }),
-      invalidatesTags: (result, error, id) => [
+        responseHandler: async (response) => {
+          const text = await response.text();
+
+          if (!text) {
+            return null;
+          }
+
+          try {
+            return JSON.parse(text);
+          } catch {
+            return text;
+          }
+        },
+      };
+      },
+      invalidatesTags: (result, error, arg) => {
+        const id = typeof arg === "string" ? arg : arg?.id;
+        const clientId = typeof arg === "string" ? null : arg?.clientId;
+
+        return [
         { type: "Quote", id },
         { type: "Quote", id: "LIST" },
-      ],
+        { type: "Client", id: "LIST" },
+        ...(clientId ? [{ type: "Client", id: clientId }] : []),
+      ];
+      },
     }),
   }),
 });

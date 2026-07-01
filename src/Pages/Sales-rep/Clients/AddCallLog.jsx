@@ -8,12 +8,12 @@ const CALL_STATUS_OPTIONS = [
   "No Pickup",
 ];
 
-const AddCallLog = ({ closeModal, clientId, onSubmit }) => {
+const AddCallLog = ({ closeModal, clientId, onSubmit, isSubmitting = false }) => {
   const [status, setStatus] = useState("");
   const [note, setNote] = useState("");
   const [reason, setReason] = useState(""); // New state for reason
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!e.currentTarget.checkValidity()) {
@@ -30,8 +30,7 @@ const AddCallLog = ({ closeModal, clientId, onSubmit }) => {
     };
 
     //console.log("Payload", payload);
-    onSubmit(payload);
-    closeModal();
+    await onSubmit(payload);
   };
 
   return (
@@ -109,15 +108,17 @@ const AddCallLog = ({ closeModal, clientId, onSubmit }) => {
           <button
             type="button"
             onClick={closeModal}
+            disabled={isSubmitting}
             className="w-full sm:flex-1 py-2 border rounded-lg text-sm sm:text-base"
           >
             Cancel
           </button>
           <button
             type="submit"
+            disabled={isSubmitting}
             className="w-full sm:flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm sm:text-base"
           >
-            Save Call Log
+            {isSubmitting ? "Saving Call Log..." : "Save Call Log"}
           </button>
         </div>
       </form>

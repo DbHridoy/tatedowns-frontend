@@ -24,6 +24,21 @@ const DC = ({
 
   const designConsultations = job?.designConsultation ?? [];
   const hasDocs = designConsultations.length > 0;
+  const normalizedJobStatus = String(job?.status || "").trim().toLowerCase();
+  const normalizedDownPaymentStatus = String(job?.downPaymentStatus || "")
+    .trim()
+    .toLowerCase();
+  const isDownPaymentPending =
+    normalizedDownPaymentStatus === "pending" ||
+    normalizedJobStatus === "downpayment pending";
+  const isAddAction = String(actionLabel || "")
+    .trim()
+    .toLowerCase()
+    .startsWith("add");
+  const shouldHideAction =
+    hideAction || (isDownPaymentPending && !hasDocs && isAddAction);
+  const showDownPaymentPendingMessage =
+    !hideAction && isDownPaymentPending && !hasDocs && isAddAction;
 
   const renderFileLinks = (files = []) =>
     files.length ? (
@@ -51,7 +66,7 @@ const DC = ({
           DC (Design Consultation)
         </h2>
 
-        {!hideAction && (
+        {!shouldHideAction && (
           <button
             onClick={
               onAction
@@ -66,6 +81,11 @@ const DC = ({
           >
             {actionLabel}
           </button>
+        )}
+        {showDownPaymentPendingMessage && (
+          <p className="text-sm sm:text-base text-amber-700 font-medium">
+            Downpayment is pending. You can add DC after downpayment approval.
+          </p>
         )}
       </div>
 

@@ -5,6 +5,7 @@ import {
   useGetAllJobsQuery,
 } from "../../../redux/api/jobApi";
 import { useGetAllMileageLogsQuery } from "../../../redux/api/expenseApi";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 const RepDetails = () => {
   const [addPaymentModal, setAddPaymentModal] = useState(false);
@@ -18,18 +19,22 @@ const RepDetails = () => {
     filters: {},
   });
   //console.log("repId", id);
-  const { data: jobsData = [] } = useGetAllJobsQuery({
+  const { data: jobsData = [], isLoading: isJobsLoading } = useGetAllJobsQuery({
     options: params,
     repId: id,
   });
 
-  const { data: deductionData } = useGetAllMileageLogsQuery(id);
+  const { data: deductionData, isLoading: isDeductionsLoading } = useGetAllMileageLogsQuery(id);
 
   // Use the rep ID from params
   const jobs = jobsData.data || [];
   const totalItems = jobsData.total || 0;
   const totalEarnings = jobsData.totalEarning || 0;
   const totalDeductions = deductionData?.data || 0;
+
+  if (isJobsLoading || isDeductionsLoading) {
+    return <SimpleLoader text="Loading report details..." />;
+  }
 
   return (
     <div className="min-h-screen page-container text-gray-800 space-y-6">

@@ -67,7 +67,7 @@ const jobApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: data, // ✅ send the fields directly
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Job", id }, { type: "Job", id: "LIST" }],
+      invalidatesTags: (result, error, { id }) => [{ type: "Job", id }, { type: "Job", id: "LIST" },{type:"MyStats",id:"ME"}],
     }), 
 
     deleteJob: builder.mutation({

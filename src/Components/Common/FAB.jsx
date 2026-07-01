@@ -32,7 +32,7 @@ function FAB() {
             <button
               onClick={() =>
                 handleClick(
-                  role === "Admin" ? `/admin/add-clients` : `/sales-rep/add-client`
+                  role === "Admin" ? `/admin/leads/add-lead` : `/sales-rep/leads/add-lead`
                 )
               }
               className="flex items-center justify-center w-48 p-2 h-12 rounded-2xl bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition"
@@ -45,13 +45,13 @@ function FAB() {
           {role === "Sales Rep" && (
             <>
               <button
-                onClick={() => handleClick(`/sales-rep/add-new-quote`)}
+                onClick={() => handleClick(`/sales-rep/quotes/add-quote`)}
                 className="flex items-center justify-center w-48 p-2 h-12 rounded-2xl bg-green-500 text-white shadow-lg hover:bg-green-600 transition"
               >
                 Add Quote
               </button>
               <button
-                onClick={() => handleClick(`/sales-rep/add-job`)}
+                onClick={() => handleClick(`/sales-rep/jobs/add-job`)}
                 className="flex items-center justify-center w-48 p-2 h-12 rounded-2xl bg-red-500 text-white shadow-lg hover:bg-red-600 transition"
               >
                 Add Job

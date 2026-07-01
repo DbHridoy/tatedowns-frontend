@@ -1,11 +1,14 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import {
   useGetAllMileageLogsQuery,
   useUpdateMileageLogStatusMutation,
 } from "../../../redux/api/expenseApi";
+import formatCurrency from "../../../utils/formatCurrency";
 
 function MileageApprovalRequests() {
+  const navigate = useNavigate();
   const [changeMileageLogStatus] = useUpdateMileageLogStatusMutation();
 
   const [params, setParams] = useState({
@@ -51,7 +54,7 @@ function MileageApprovalRequests() {
     columns: [
       { label: "No", accessor: "No" },
       { label: "Sales Rep", accessor: "salesRep", sortable: true },
-      { label: "Requested Amount", accessor: "requestedAmount" },
+      { label: "Requested Amount", accessor: "requestedAmount", format: formatCurrency },
       { label: "Total Miles", accessor: "totalMilesDriven" },
       // { label: "Period", accessor: "period" },
       // { label: "Note", accessor: "note" },
@@ -59,6 +62,13 @@ function MileageApprovalRequests() {
       { label: "Status", accessor: "status" },
     ],
     actions: [
+      {
+        label: "View",
+        className: "bg-blue-500 text-white p-2 rounded-lg",
+        onClick: (item) => {
+          navigate(`/admin/mileage/${item.id}`);
+        },
+      },
       {
         label: "Approve",
         className: "bg-green-500 text-white p-2 rounded-lg",

@@ -4,6 +4,7 @@ import { useGetMyStatsQuery, useGetPaymentsQuery } from "../../../redux/api/comm
 import { selectCurrentUser } from "../../../redux/slice/authSlice";
 import PeriodFilter from "../../../Components/Common/PeriodFilter";
 import { getDefaultPeriodInput, normalizePeriodDate } from "../../../utils/period";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 /**
  * Single component that can render any set of stats.
@@ -133,9 +134,7 @@ export default function SalesRepReports() {
         </h2>
         <div className="mt-4">
           {isPaymentsLoading ? (
-            <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-              Loading payments...
-            </div>
+            <SimpleLoader text="Loading payments..." className="min-h-[120px]" />
           ) : payments.length === 0 ? (
             <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
               No payments yet.

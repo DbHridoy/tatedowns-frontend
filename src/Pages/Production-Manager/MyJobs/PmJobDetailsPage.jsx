@@ -10,6 +10,7 @@ import { useLocation, useParams } from "react-router-dom";
 import DesignConsultationCreate from "./DesignConsultation";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../../redux/slice/authSlice";
+import SimpleLoader from "../../../Components/Common/SimpleLoader";
 
 const formatDateInput = (value) => {
   if (!value) return "";
@@ -19,24 +20,27 @@ const formatDateInput = (value) => {
 };
 
 const statusOptions = [
+  "Downpayment Pending",
+  "DC Pending",
+  "DC Awaiting Approval",
   "Ready to Schedule",
   "Scheduled and Open",
   "Pending Close",
+  "Closed",
   "Cancelled",
 ];
 
 const PmJobDetailsPage = () => {
   const { jobId } = useParams();
-  const { pathname } = useLocation();
+  const location = useLocation();
   const currentUser = useSelector(selectCurrentUser);
   const [isEditing, setIsEditing] = useState(false);
   const [showDcForm, setShowDcForm] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState("");
   const [formJob, setFormJob] = useState({
     title: "",
     status: "",
     startDate: "",
+    estimatedStartDate: "",
     price: 0,
     downPayment: 0,
     budgetSpent: 0,
@@ -50,10 +54,17 @@ const PmJobDetailsPage = () => {
   const [updateJob, { isLoading: isSaving }] = useUpdateJobMutation();
 
   const job = data?.data;
-  const isJobsRoute =
-    pathname.startsWith("/production-manager/jobs/") &&
-    !pathname.includes("/production-manager/my-jobs/");
-  const allowFullActions = !isJobsRoute;
+  const jobsViewMode = location.state?.jobsViewMode;
+  const isAssignedToCurrentPm =
+    String(job?.productionManagerId?._id || job?.productionManagerId || "") ===
+    String(currentUser?._id || "");
+  const isMyJobsContext =
+    jobsViewMode === "myJobs" ||
+    (isAssignedToCurrentPm && ["Scheduled and Open", "Pending Close"].includes(job?.status));
+  const allowFullActions = false;
+  const canCancelJob = !["Pending Close", "Closed", "Cancelled"].includes(
+    job?.status
+  );
   const statusOptionsForEdit = useMemo(
     () => [...new Set([formJob.status, ...statusOptions])].filter(Boolean),
     [formJob.status]
@@ -69,6 +80,7 @@ const PmJobDetailsPage = () => {
       title: job.title ?? "",
       status: job.status ?? "",
       startDate: formatDateInput(job.startDate),
+      estimatedStartDate: formatDateInput(job.estimatedStartDate),
       price: job.price ?? 0,
       downPayment: job.downPayment ?? 0,
       budgetSpent: job.budgetSpent ?? 0,
@@ -79,7 +91,7 @@ const PmJobDetailsPage = () => {
     });
   }, [job]);
 
-  if (isLoading) return <p className="p-6">Loading job details...</p>;
+  if (isLoading) return <SimpleLoader text="Loading job details..." />;
   if (isError || !job) return <p className="p-6 text-red-500">Job not found</p>;
 
   const handleCancel = () => {
@@ -87,6 +99,7 @@ const PmJobDetailsPage = () => {
       title: job.title ?? "",
       status: job.status ?? "",
       startDate: formatDateInput(job.startDate),
+      estimatedStartDate: formatDateInput(job.estimatedStartDate),
       price: job.price ?? 0,
       downPayment: job.downPayment ?? 0,
       budgetSpent: job.budgetSpent ?? 0,
@@ -109,6 +122,9 @@ const PmJobDetailsPage = () => {
         title: formJob.title,
         status: formJob.status,
         startDate: formJob.startDate ? new Date(formJob.startDate) : undefined,
+        estimatedStartDate: formJob.estimatedStartDate
+          ? new Date(formJob.estimatedStartDate)
+          : undefined,
         price: Number(formJob.price) || 0,
         downPayment: Number(formJob.downPayment) || 0,
         budgetSpent: Number(formJob.budgetSpent) || 0,
@@ -122,13 +138,13 @@ const PmJobDetailsPage = () => {
   };
 
   const getStatusAction = () => {
-    if (job?.status === "Ready to Schedule") {
+    if (!isMyJobsContext && job?.status === "Ready to Schedule") {
       return {
         label: "Mark as Scheduled and Open",
         nextStatus: "Scheduled and Open",
       };
     }
-    if (job?.status === "Scheduled and Open") {
+    if (isMyJobsContext && job?.status === "Scheduled and Open") {
       return {
         label: "Mark as Pending Close",
         nextStatus: "Pending Close",
@@ -141,27 +157,13 @@ const PmJobDetailsPage = () => {
     if (!jobId || !nextStatus) return;
     await updateJob({
       id: jobId,
-      data: { status: nextStatus },
-    }).unwrap();
-  };
-
-  const handleScheduleOpen = () => {
-    setScheduleDate("");
-    setShowScheduleModal(true);
-  };
-
-  const handleScheduleConfirm = async () => {
-    if (!jobId || !scheduleDate) return;
-    await updateJob({
-      id: jobId,
       data: {
-        status: "Scheduled and Open",
-        productionManagerId: currentUser?._id,
-        startDate: new Date(`${scheduleDate}T00:00:00`).toISOString(),
+        status: nextStatus,
+        ...(nextStatus === "Scheduled and Open"
+          ? { productionManagerId: currentUser?._id, startDate: job?.startDate || new Date() }
+          : {}),
       },
     }).unwrap();
-    setShowScheduleModal(false);
-    setScheduleDate("");
   };
 
   return (
@@ -183,7 +185,7 @@ const PmJobDetailsPage = () => {
                 className="w-full sm:w-auto bg-green-500 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                 disabled={isSaving}
               >
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </button>
               {getStatusAction() && (
                 <button
@@ -191,16 +193,16 @@ const PmJobDetailsPage = () => {
                   className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                   disabled={isSaving}
                 >
-                  {getStatusAction().label}
+                  {isSaving ? "Updating..." : getStatusAction().label}
                 </button>
               )}
-              {job?.status !== "Cancelled" && (
+              {canCancelJob && (
                 <button
                   onClick={() => handleStatusUpdate("Cancelled")}
                   className="w-full sm:w-auto bg-gray-800 text-white px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
                   disabled={isSaving}
                 >
-                  Mark as Cancelled
+                  {isSaving ? "Updating..." : "Mark as Cancelled"}
                 </button>
               )}
             </>
@@ -220,7 +222,7 @@ const PmJobDetailsPage = () => {
                   {getStatusAction().label}
                 </button>
               )}
-              {job?.status !== "Cancelled" && (
+              {canCancelJob && (
                 <button
                   onClick={() => handleStatusUpdate("Cancelled")}
                   className="w-full sm:w-auto bg-gray-800 text-white px-4 py-2 rounded-md text-sm sm:text-base"
@@ -231,13 +233,13 @@ const PmJobDetailsPage = () => {
             </>
           )
         ) : (
-          job?.status === "Ready to Schedule" && (
+          getStatusAction() && (
             <button
-              onClick={handleScheduleOpen}
-              className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-md text-sm sm:text-base"
+              onClick={() => handleStatusUpdate(getStatusAction().nextStatus)}
+              className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-md text-sm sm:text-base disabled:opacity-60"
               disabled={isSaving}
             >
-              Mark as Scheduled and Open
+              {isSaving ? "Updating..." : getStatusAction().label}
             </button>
           )
         )}
@@ -253,26 +255,12 @@ const PmJobDetailsPage = () => {
         onFieldChange={(field, value) =>
           setFormJob((prev) => ({ ...prev, [field]: value }))
         }
+        showEstimatedStartDate
+        showProductionManager
+        jobIdPosition="afterStatus"
+        estimatedStartDatePosition="afterPrice"
         readOnlyFields={[
-          {
-            label: "Estimated Start Date",
-            value: job.estimatedStartDate
-              ? new Date(job.estimatedStartDate).toLocaleDateString()
-              : null,
-          },
-          { label: "Down Payment Status", value: job.downPaymentStatus },
           { label: "Estimated Gallons", value: job.estimatedGallons },
-        ]}
-        readOnlyFieldsPosition="afterStartDate"
-        readOnlyFieldKeys={[
-          "status",
-          "price",
-          "downPayment",
-          "budgetSpent",
-          "totalHours",
-          "setupCleanup",
-          "powerwash",
-          "laborHours",
         ]}
       />
 
@@ -302,45 +290,6 @@ const PmJobDetailsPage = () => {
 
       {/* Notes Section */}
       <SharedNotes notes={job.notes} />
-
-      {showScheduleModal && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-[92vw] sm:w-full sm:max-w-md md:max-w-lg lg:max-w-xl">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold mb-3">
-                Mark as scheduled
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600 mb-4">
-                Select a start date for {job?.title}.
-              </p>
-              <input
-                type="date"
-                value={scheduleDate}
-                onChange={(e) => setScheduleDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg mb-6 text-sm sm:text-base"
-              />
-              <div className="flex flex-col sm:flex-row sm:justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowScheduleModal(false);
-                    setScheduleDate("");
-                  }}
-                  className="w-full sm:w-auto px-4 py-2 bg-gray-100 rounded text-sm sm:text-base"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleScheduleConfirm}
-                  disabled={!scheduleDate || isSaving}
-                  className="w-full sm:w-auto px-4 py-2 bg-red-500 text-white rounded text-sm sm:text-base disabled:opacity-50"
-                >
-                  Confirm
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

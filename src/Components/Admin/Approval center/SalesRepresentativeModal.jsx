@@ -4,6 +4,7 @@ import {
   useGetAllUsersQuery,
 } from "../../../redux/api/userApi";
 import { useUpdateClientMutation } from "../../../redux/api/clientApi";
+import SimpleLoader from "../../Common/SimpleLoader";
 
 export default function SalesRepresentativeModal({ isOpen, onClose, lead }) {
   const [search, setSearch] = useState("");
@@ -57,7 +58,7 @@ export default function SalesRepresentativeModal({ isOpen, onClose, lead }) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl p-6 w-[92vw] sm:w-full sm:max-w-md md:max-w-lg lg:max-w-xl">
-          <p className="text-gray-500">Loading...</p>
+          <SimpleLoader className="min-h-[120px] border-0 p-0" />
         </div>
       </div>
     );

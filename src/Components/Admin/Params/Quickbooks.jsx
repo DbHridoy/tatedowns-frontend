@@ -1,6 +1,12 @@
-import React from "react";
+import { useState } from "react";
+import { FiCheck, FiRefreshCw, FiX } from "react-icons/fi";
 
 function Quickbooks() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState(new Date());
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
   const formatLastSync = (date) => {
     return date.toLocaleString("en-US", {
       month: "2-digit",
@@ -57,6 +63,12 @@ function Quickbooks() {
           Manage your QuickBooks Online connection
         </p>
 
+        {showSuccessMessage ? (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            QuickBooks settings updated successfully.
+          </div>
+        ) : null}
+
         {isConnected ? (
           <div className="p-4 mb-4 border border-green-200 rounded-lg bg-green-50">
             <div className="flex items-center justify-between mb-2">
@@ -94,7 +106,7 @@ function Quickbooks() {
               onClick={handleDisconnect}
               className="flex items-center px-4 py-2 font-medium text-red-600 transition-colors border border-red-300 rounded-md hover:bg-red-50"
             >
-              <X className="w-4 h-4 mr-2" />
+              <FiX className="w-4 h-4 mr-2" />
               Disconnect
             </button>
           ) : (
@@ -102,7 +114,7 @@ function Quickbooks() {
               onClick={handleConnect}
               className="flex items-center px-4 py-2 font-medium text-white transition-colors bg-green-500 rounded-md hover:bg-green-600"
             >
-              <Check className="w-4 h-4 mr-2" />
+              <FiCheck className="w-4 h-4 mr-2" />
               Connect to QuickBooks
             </button>
           )}
@@ -116,7 +128,7 @@ function Quickbooks() {
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
             >
-              <RefreshCw
+              <FiRefreshCw
                 className={`w-4 h-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
               />
               {isSyncing ? "Syncing..." : "Sync Now"}

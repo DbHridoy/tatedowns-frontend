@@ -1,6 +1,6 @@
 export const getLeadSourceColor = (source) => {
   switch (source) {
-    case "Door":
+    case "Door to Door":
       return "bg-blue-100 text-blue-800";
     case "Inbound":
       return "bg-green-100 text-green-800";
