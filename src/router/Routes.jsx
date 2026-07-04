@@ -113,7 +113,7 @@ export const router = createBrowserRouter([
   // Shared production routes
   {
     path: "/production",
-    element: <RoleGuard allowedRole="Production Manager" />,
+    element: <RoleGuard allowedRole={["Production Manager", "Admin"]} />,
     children: [
       {
         element: <MainLayout />,

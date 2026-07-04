@@ -342,35 +342,82 @@ export const normalizeScheduleItem = (item) => {
       : Array.isArray(item?.painters)
         ? item.painters
         : [];
+  const rawPainterDailyHours = Array.isArray(item?.painterDailyHours)
+    ? item.painterDailyHours
+    : [];
+  const painterDirectory = new Map();
+
+  rawPainterDailyHours.forEach((entry) => {
+    (entry?.painterHours || []).forEach((hoursEntry) => {
+      const painterId =
+        hoursEntry?.painter?._id ||
+        hoursEntry?.painter?.id ||
+        hoursEntry?.painterId ||
+        hoursEntry?.painter;
+      if (!painterId) return;
+
+      painterDirectory.set(String(painterId), {
+        fullName:
+          hoursEntry?.painter?.fullName ||
+          hoursEntry?.painter?.name ||
+          painterDirectory.get(String(painterId))?.fullName ||
+          "",
+        email:
+          hoursEntry?.painter?.email ||
+          painterDirectory.get(String(painterId))?.email ||
+          "",
+        role:
+          hoursEntry?.painter?.role ||
+          painterDirectory.get(String(painterId))?.role ||
+          "",
+      });
+    });
+  });
   const rainDelayHistory = Array.isArray(item?.rainDelayHistory)
     ? item.rainDelayHistory
     : [];
-  const painterNames = rawCrewPainters.map((painter) => painter?.fullName || painter?.name).filter(Boolean);
-  const crewPainters = rawCrewPainters.map((painter) => ({
-        _id: painter?._id || painter?.id || "",
-        fullName: painter?.fullName || painter?.name || "Unnamed Painter",
-        email: painter?.email || "",
-        role: painter?.role || "",
-      }));
-  const painterDailyHours = Array.isArray(item?.painterDailyHours)
-    ? item.painterDailyHours
-        .map((entry) => ({
-          workDate: entry?.workDate ? formatDateKey(entry.workDate) : "",
-          painterHours: Array.isArray(entry?.painterHours)
-            ? entry.painterHours.map((hoursEntry) => ({
-                painterId:
-                  hoursEntry?.painter?._id ||
-                  hoursEntry?.painter?.id ||
-                  hoursEntry?.painterId ||
-                  hoursEntry?.painter ||
-                  "",
-                painterName: hoursEntry?.painter?.fullName || "",
-                hours: Number(hoursEntry?.hours) || 0,
-              }))
-            : [],
-        }))
-        .filter((entry) => entry.workDate)
-    : [];
+  const normalizedCrewPainters =
+    rawCrewPainters.length > 0
+      ? rawCrewPainters.map((painter) => {
+          const painterId = painter?._id || painter?.id || painter || "";
+          const fallbackPainter = painterDirectory.get(String(painterId));
+
+          return {
+            _id: String(painterId),
+            fullName:
+              painter?.fullName ||
+              painter?.name ||
+              fallbackPainter?.fullName ||
+              "Unnamed Painter",
+            email: painter?.email || fallbackPainter?.email || "",
+            role: painter?.role || fallbackPainter?.role || "",
+          };
+        })
+      : [...painterDirectory.entries()].map(([painterId, painterInfo]) => ({
+          _id: painterId,
+          fullName: painterInfo.fullName || "Unnamed Painter",
+          email: painterInfo.email || "",
+          role: painterInfo.role || "",
+        }));
+  const painterNames = normalizedCrewPainters.map((painter) => painter?.fullName).filter(Boolean);
+  const crewPainters = normalizedCrewPainters;
+  const painterDailyHours = rawPainterDailyHours
+    .map((entry) => ({
+      workDate: entry?.workDate ? formatDateKey(entry.workDate) : "",
+      painterHours: Array.isArray(entry?.painterHours)
+        ? entry.painterHours.map((hoursEntry) => ({
+            painterId:
+              hoursEntry?.painter?._id ||
+              hoursEntry?.painter?.id ||
+              hoursEntry?.painterId ||
+              hoursEntry?.painter ||
+              "",
+            painterName: hoursEntry?.painter?.fullName || "",
+            hours: Number(hoursEntry?.hours) || 0,
+          }))
+        : [],
+    }))
+    .filter((entry) => entry.workDate);
   const scheduleSegments = Array.isArray(item?.scheduleSegments)
     ? item.scheduleSegments
         .map((segment) => ({
