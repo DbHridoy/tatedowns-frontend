@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { FiDownload, FiPlus } from "react-icons/fi";
 import DataTable from "../../Components/Common/DataTable";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
 import PainterFormModal from "../../Components/Production/PainterFormModal";
@@ -218,30 +219,34 @@ const PainterManagementPage = () => {
 
   return (
     <div className="page-container space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Painter Management</h1>
           <p className="mt-1 text-sm text-gray-500">
             Create painter accounts, update their status, and place them on the right crew.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleExportExcel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Export Excel
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setEditingPainter(null);
-            setIsModalOpen(true);
-          }}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Add Painter
-        </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            <FiDownload className="h-4 w-4" />
+            Export Excel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingPainter(null);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+          >
+            <FiPlus className="h-4 w-4" />
+            Add Painter
+          </button>
+        </div>
       </div>
 
       {isPaintersLoading || isCrewsLoading ? (
