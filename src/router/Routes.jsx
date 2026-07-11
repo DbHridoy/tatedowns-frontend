@@ -40,6 +40,7 @@ import ProductionSettings from "../Pages/Common/ProductionSettings";
 import ProductionCalendarPage from "../Pages/Production/ProductionCalendarPage";
 import CrewManagementPage from "../Pages/Production/CrewManagementPage";
 import PainterManagementPage from "../Pages/Production/PainterManagementPage";
+import PainterDetailsPage from "../Pages/Production/PainterDetailsPage";
 import PainterDashboardPage from "../Pages/Painter/PainterDashboardPage";
 import PainterCrewPage from "../Pages/Painter/PainterCrewPage";
 import PainterSchedulePage from "../Pages/Painter/PainterSchedulePage";
@@ -122,6 +123,7 @@ export const router = createBrowserRouter([
           { path: "calendar", element: <ProductionCalendarPage /> },
           { path: "crews", element: <CrewManagementPage /> },
           { path: "painters", element: <PainterManagementPage /> },
+          { path: "painters/:painterId", element: <PainterDetailsPage /> },
           { path: "*", element: <GlobalNoRoute /> },
         ],
       },

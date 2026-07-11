@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FiDownload, FiPlus } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import DataTable from "../../Components/Common/DataTable";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
 import PainterFormModal from "../../Components/Production/PainterFormModal";
@@ -24,6 +25,7 @@ const formatExcelDateLabel = (value) => {
 };
 
 const PainterManagementPage = () => {
+  const navigate = useNavigate();
   const [editingPainter, setEditingPainter] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: paintersData, isLoading: isPaintersLoading } = useGetPaintersQuery();
@@ -55,7 +57,6 @@ const PainterManagementPage = () => {
     columns: [
       { label: "No", accessor: "No" },
       { label: "Painter", accessor: "fullName", sortable: true },
-      { label: "Total Hours", accessor: "totalWorkedHours", sortable: true },
       { label: "Email", accessor: "email" },
       { label: "Status", accessor: "status" },
       { label: "Crew", accessor: "crewName" },
@@ -68,6 +69,11 @@ const PainterManagementPage = () => {
     showSearch: false,
     showPagination: false,
     actions: [
+      {
+        label: "View",
+        className: "bg-slate-700 text-white p-2 rounded-lg",
+        onClick: (item) => navigate(`/production/painters/${item._id}`),
+      },
       {
         label: "Edit",
         className: "bg-blue-500 text-white p-2 rounded-lg",

@@ -141,6 +141,13 @@ const productionApi = baseApi.injectEndpoints({
       },
     }),
 
+    getPainterById: builder.query({
+      query: (painterId) => `/painters/${painterId}`,
+      providesTags: (result, error, painterId) => [
+        { type: "Painter", id: painterId },
+      ],
+    }),
+
     createPainter: builder.mutation({
       query: (body) => ({
         url: "/painters",
@@ -190,6 +197,7 @@ export const {
   useAssignPainterToCrewMutation,
   useRemovePainterFromCrewMutation,
   useGetPaintersQuery,
+  useGetPainterByIdQuery,
   useCreatePainterMutation,
   useUpdatePainterMutation,
   useGetPainterOwnCrewQuery,
