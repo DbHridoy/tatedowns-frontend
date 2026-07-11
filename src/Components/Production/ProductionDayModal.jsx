@@ -11,6 +11,7 @@ const ProductionDayModal = ({
   onClose,
   onUpdateStatus,
   onUpdatePainterHours,
+  onUpdateMaterialExpenses,
   onApplyRainDelay,
 }) => {
   const formattedDate = day?.date
@@ -75,6 +76,7 @@ const ProductionDayModal = ({
                 canPainterUpdate={canPainterUpdate}
                 onUpdateStatus={onUpdateStatus}
                 onUpdatePainterHours={onUpdatePainterHours}
+                onUpdateMaterialExpenses={onUpdateMaterialExpenses}
                 onApplyRainDelay={(scheduleItem) =>
                   onApplyRainDelay?.({
                     ...scheduleItem,

@@ -15,6 +15,7 @@ const PainterFormModal = ({
     email: "",
     password: "",
     phoneNumber: "",
+    hourlyRate: "",
     status: "Active",
     crewId: "",
   });
@@ -26,6 +27,10 @@ const PainterFormModal = ({
       email: painter?.email || "",
       password: "",
       phoneNumber: painter?.phoneNumber || "",
+      hourlyRate:
+        painter?.hourlyRate === 0 || painter?.hourlyRate
+          ? String(painter.hourlyRate)
+          : "",
       status: painter?.isActive === false ? "inactive" : "active",
       crewId: painter?.crewId || "",
     });
@@ -120,6 +125,24 @@ const PainterFormModal = ({
               setFormState((current) => ({
                 ...current,
                 phoneNumber: event.target.value,
+              }))
+            }
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700"
+          />
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Hourly Rate
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={formState.hourlyRate}
+            onChange={(event) =>
+              setFormState((current) => ({
+                ...current,
+                hourlyRate: event.target.value,
               }))
             }
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700"

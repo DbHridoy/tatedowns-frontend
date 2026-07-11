@@ -304,6 +304,7 @@ export const normalizePainter = (painter) => ({
     (painter?.isActive === false ? "Inactive" : "Active"),
   isActive: painter?.isActive ?? painter?.status !== "Inactive",
   phoneNumber: painter?.phoneNumber || "",
+  hourlyRate: Number(painter?.hourlyRate) || 0,
   crewId:
     painter?.crewId?._id ||
     painter?.crewId ||
@@ -319,6 +320,36 @@ export const normalizePainter = (painter) => ({
       }))
     : [],
 });
+
+export const normalizeCostSummary = (costSummary) => {
+  if (!costSummary || typeof costSummary !== "object") {
+    return null;
+  }
+
+  return {
+  jobPrice: Number(costSummary?.jobPrice) || 0,
+  totalLoggedHours: Number(costSummary?.totalLoggedHours) || 0,
+  directLaborCost: Number(costSummary?.directLaborCost) || 0,
+  laborCost: Number(costSummary?.laborCost) || 0,
+  burdenMultiplier: Number(costSummary?.burdenMultiplier) || 1.2,
+  materialCost: Number(costSummary?.materialCost) || 0,
+  totalCost: Number(costSummary?.totalCost) || 0,
+  grossProfit: Number(costSummary?.grossProfit) || 0,
+  grossProfitMarginPercent: Number(costSummary?.grossProfitMarginPercent) || 0,
+  laborPercentOfPrice: Number(costSummary?.laborPercentOfPrice) || 0,
+  materialPercentOfPrice: Number(costSummary?.materialPercentOfPrice) || 0,
+  totalCostPercentOfPrice: Number(costSummary?.totalCostPercentOfPrice) || 0,
+  overBudget: Number(costSummary?.overBudget) || 0,
+  chartSegments: Array.isArray(costSummary?.chartSegments)
+    ? costSummary.chartSegments.map((segment) => ({
+        key: segment?.key || "",
+        label: segment?.label || "",
+        value: Number(segment?.value) || 0,
+        percentOfPrice: Number(segment?.percentOfPrice) || 0,
+      }))
+    : [],
+  };
+};
 
 export const normalizeScheduleItem = (item) => {
   const rawStart = item?.startDate || item?.scheduledStartDate || item?.date;
@@ -441,6 +472,15 @@ export const normalizeScheduleItem = (item) => {
     return dates;
   }, []);
   const visibleRainDelayDays = delayedDateKeys.length;
+  const materialExpenses = Array.isArray(item?.materialExpenses)
+    ? item.materialExpenses.map((entry, index) => ({
+        id: entry?.id || `${item?._id || "schedule"}-material-${index}`,
+        description: entry?.description || "",
+        amount: Number(entry?.amount) || 0,
+        expenseDate: entry?.expenseDate ? formatDateKey(entry.expenseDate) : "",
+        note: entry?.note || "",
+      }))
+    : [];
 
   return {
     _id: item?._id || item?.id || "",
@@ -491,6 +531,8 @@ export const normalizeScheduleItem = (item) => {
     painterNames,
     crewPainters,
     painterDailyHours,
+    materialExpenses,
+    costSummary: normalizeCostSummary(item?.costSummary),
     canPainterUpdateStatus: Boolean(
       item?.canPainterUpdateStatus ??
         item?.permissions?.canPainterUpdateStatus

@@ -214,6 +214,12 @@ const PainterDetailsPage = () => {
           <p className="mt-2 font-medium text-slate-900">{painter.crewName}</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-sm text-gray-500">Hourly Rate</p>
+          <p className="mt-2 font-medium text-slate-900">
+            ${painter.hourlyRate.toFixed(2)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-sm text-gray-500">Status</p>
           <p className="mt-2 font-medium text-slate-900">{painter.status}</p>
         </div>

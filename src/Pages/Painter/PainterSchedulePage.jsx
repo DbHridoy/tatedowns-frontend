@@ -1,13 +1,9 @@
 import { useMemo, useState } from "react";
-import toast from "react-hot-toast";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
 import ProductionCalendarGrid from "../../Components/Production/ProductionCalendarGrid";
 import ProductionCalendarToolbar from "../../Components/Production/ProductionCalendarToolbar";
 import ProductionDayModal from "../../Components/Production/ProductionDayModal";
-import {
-  useGetPainterOwnScheduleQuery,
-  useUpdateScheduleStatusMutation,
-} from "../../redux/api/productionApi";
+import { useGetPainterOwnScheduleQuery } from "../../redux/api/productionApi";
 import { CALENDAR_VIEW_MODES } from "../../constants/production";
 import {
   addDays,
@@ -65,13 +61,11 @@ const PainterSchedulePage = () => {
     data,
     isLoading,
     isError,
-    refetch,
   } = useGetPainterOwnScheduleQuery({
     viewMode,
     startDate: formatDateKey(visibleRange.startDate),
     endDate: formatDateKey(visibleRange.endDate),
   });
-  const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
 
   const scheduleItems = useMemo(
     () => normalizeProductionCalendarResponse(data).items,
@@ -89,18 +83,6 @@ const PainterSchedulePage = () => {
   const selectedDayDelayedItems = selectedDay?.key
     ? delayedItemsByDay[selectedDay.key] || []
     : [];
-
-  const handleUpdateStatus = async (item, status) => {
-    if (!item.canPainterUpdateStatus || item.status === status) return;
-
-    try {
-      await updateScheduleStatus({ scheduleId: item._id, status }).unwrap();
-      await refetch();
-      toast.success("Status updated.");
-    } catch (error) {
-      toast.error(error?.data?.message || "Unable to update status.");
-    }
-  };
 
   if (isLoading) {
     return <SimpleLoader text="Loading schedule..." className="min-h-[320px]" />;
@@ -144,9 +126,7 @@ const PainterSchedulePage = () => {
         items={selectedDayItems}
         delayedItems={selectedDayDelayedItems}
         canManage={false}
-        canPainterUpdate
         onClose={() => setSelectedDay(null)}
-        onUpdateStatus={handleUpdateStatus}
         onUpdatePainterHours={undefined}
       />
     </div>

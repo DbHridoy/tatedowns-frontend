@@ -125,6 +125,19 @@ const ProductionCalendarPage = () => {
     }
   };
 
+  const handleUpdateMaterialExpenses = async (item, materialExpenses) => {
+    try {
+      await updateScheduleItem({
+        scheduleId: item._id,
+        materialExpenses,
+      }).unwrap();
+      await refetchCalendar();
+      toast.success("Material expenses updated.");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update material expenses.");
+    }
+  };
+
   const handleApplyRainDelay = async (payload) => {
     try {
       await applyRainDelay(payload).unwrap();
@@ -178,6 +191,7 @@ const ProductionCalendarPage = () => {
         onClose={() => setSelectedDay(null)}
         onUpdateStatus={handleUpdateStatus}
         onUpdatePainterHours={handleUpdatePainterHours}
+        onUpdateMaterialExpenses={handleUpdateMaterialExpenses}
         onApplyRainDelay={(item) => setRainDelayItem(item)}
       />
 

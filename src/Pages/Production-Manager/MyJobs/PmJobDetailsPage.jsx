@@ -1,6 +1,7 @@
 import SharedNotes from "../../../Components/Sales-rep/Jobs/SharedNotes";
 import DC from "../../../Components/Sales-rep/Jobs/DC";
 import JobDetailsOverview from "../../../Components/Common/JobDetailsOverview";
+import JobCostBreakdownCard from "../../../Components/Production/JobCostBreakdownCard";
 import { useEffect, useMemo, useState } from "react";
 import {
   useGetJobByIdQuery,
@@ -263,6 +264,8 @@ const PmJobDetailsPage = () => {
           { label: "Estimated Gallons", value: job.estimatedGallons },
         ]}
       />
+
+      <JobCostBreakdownCard costSummary={job.costSummary} />
 
       <DC
         jobId={jobId}

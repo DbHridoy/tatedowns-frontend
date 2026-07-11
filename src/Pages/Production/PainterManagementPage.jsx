@@ -106,6 +106,7 @@ const PainterManagementPage = () => {
       fullName: payload.fullName,
       email: payload.email,
       phoneNumber: payload.phoneNumber,
+      hourlyRate: Number(payload.hourlyRate) || 0,
       isActive: payload.status !== "inactive",
     };
 

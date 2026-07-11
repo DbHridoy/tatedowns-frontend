@@ -1,5 +1,6 @@
 import SharedNotes from "../../../Components/Sales-rep/Jobs/SharedNotes";
 import JobDetailsOverview from "../../../Components/Common/JobDetailsOverview";
+import JobCostBreakdownCard from "../../../Components/Production/JobCostBreakdownCard";
 import DC from "../../../Components/Sales-rep/Jobs/DC";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -293,6 +294,8 @@ const AdminJobDetailsPage = () => {
           { label: "Estimated Gallons", value: job.estimatedGallons },
         ]}
       />
+
+      <JobCostBreakdownCard costSummary={job.costSummary} />
 
       <div className="section-pad bg-white shadow-md rounded-md border">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
