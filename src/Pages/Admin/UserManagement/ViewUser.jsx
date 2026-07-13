@@ -22,6 +22,7 @@ const emptyForm = {
   email: "",
   role: "",
   cluster: "",
+  hourlyRate: "",
 };
 
 const ViewUser = () => {
@@ -75,6 +76,10 @@ const ViewUser = () => {
       email: user.email ?? "",
       role: user.role ?? "",
       cluster: user.cluster ?? "",
+      hourlyRate:
+        user.hourlyRate === 0 || user.hourlyRate
+          ? String(user.hourlyRate)
+          : "",
     });
   }, [user]);
 
@@ -119,6 +124,10 @@ const ViewUser = () => {
       email: user.email ?? "",
       role: user.role ?? "",
       cluster: user.cluster ?? "",
+      hourlyRate:
+        user.hourlyRate === 0 || user.hourlyRate
+          ? String(user.hourlyRate)
+          : "",
     });
     setIsEditing(false);
   };
@@ -132,6 +141,10 @@ const ViewUser = () => {
         email: formUser.email,
         role: formUser.role,
         cluster: formUser.role === "Sales Rep" ? formUser.cluster : "",
+        hourlyRate:
+          formUser.role === "Painter"
+            ? Number(formUser.hourlyRate || 0)
+            : undefined,
       },
     }).unwrap();
     setIsEditing(false);
@@ -293,12 +306,13 @@ const ViewUser = () => {
           value={formUser.role}
           isEditing={isEditing}
           asSelect
-          options={["Sales Rep", "Production Manager"]}
+          options={["Sales Rep", "Production Manager", "Painter"]}
           onChange={(value) =>
             setFormUser((prev) => ({
               ...prev,
               role: value,
               cluster: value === "Sales Rep" ? prev.cluster : "",
+              hourlyRate: value === "Painter" ? prev.hourlyRate : "",
             }))
           }
         />
@@ -315,6 +329,19 @@ const ViewUser = () => {
           />
         ) : (
           <DisplayField label="Cluster" value="N/A" />
+        )}
+        {formUser.role === "Painter" ? (
+          <InfoField
+            label="Hourly Rate"
+            value={formUser.hourlyRate}
+            type="number"
+            isEditing={isEditing}
+            onChange={(value) =>
+              setFormUser((prev) => ({ ...prev, hourlyRate: value }))
+            }
+          />
+        ) : (
+          <DisplayField label="Hourly Rate" value="N/A" />
         )}
       </div>
 

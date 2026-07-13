@@ -63,12 +63,18 @@ const UserForm = ({ formUser, setFormUser, isAdd }) => {
         className="w-full p-2 border rounded text-sm sm:text-base"
         value={formUser.role}
         onChange={(e) =>
-          setFormUser({ ...formUser, role: e.target.value, cluster: "" })
+          setFormUser({
+            ...formUser,
+            role: e.target.value,
+            cluster: "",
+            hourlyRate: "",
+          })
         }
       >
         <option value="">Select Role</option>
         <option value="Sales Rep">Sales Rep</option>
         <option value="Production Manager">Production Manager</option>
+        <option value="Painter">Painter</option>
       </select>
 
       {/* Cluster Field */}
@@ -119,6 +125,20 @@ const UserForm = ({ formUser, setFormUser, isAdd }) => {
             </div>
           )}
         </div>
+      )}
+
+      {formUser.role === "Painter" && (
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          className="w-full p-2 border rounded text-sm sm:text-base"
+          placeholder="Hourly Rate"
+          value={formUser.hourlyRate ?? ""}
+          onChange={(e) =>
+            setFormUser({ ...formUser, hourlyRate: e.target.value })
+          }
+        />
       )}
 
       {isAdd && (

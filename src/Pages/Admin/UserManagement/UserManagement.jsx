@@ -30,7 +30,7 @@ const UserManagement = () => {
   const [deleteUser] = useDeleteUserMutation();
 
   const users = allUsersData?.data || [];
-  const allowedRoles = ["Sales Rep", "Production Manager"];
+  const allowedRoles = ["Sales Rep", "Production Manager", "Painter"];
 
   const filteredUsers = useMemo(() => {
     const searchValue = params.search.toLowerCase();
@@ -73,6 +73,7 @@ const UserManagement = () => {
     email: "",
     role: "",
     cluster: "",
+    hourlyRate: "",
     password: "",
   });
 
@@ -85,6 +86,7 @@ const UserManagement = () => {
       email: "",
       role: "",
       cluster: "",
+      hourlyRate: "",
       password: "",
     });
 
@@ -95,8 +97,17 @@ const UserManagement = () => {
 
   /* ================= ACTIONS ================= */
   const handleAddUser = async () => {
-    //console.log("from Add user", formUser);
-    await createUser(formUser).unwrap();
+    const payload = {
+      fullName: formUser.fullName,
+      email: formUser.email,
+      role: formUser.role,
+      password: formUser.password,
+      ...(formUser.role === "Sales Rep" ? { cluster: formUser.cluster } : {}),
+      ...(formUser.role === "Painter"
+        ? { hourlyRate: Number(formUser.hourlyRate || 0) }
+        : {}),
+    };
+    await createUser(payload).unwrap();
     closeAddModal();
   };
 
@@ -119,6 +130,7 @@ const UserManagement = () => {
         options: {
           "Sales Rep": "Sales Rep",
           "Production Manager": "Production Manager",
+          Painter: "Painter",
         },
       },
     ],
