@@ -43,7 +43,7 @@ const PainterFormModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? "Edit Painter" : "Create Painter"}
-      description="Painter accounts stay isolated from the broader admin user management flow."
+      description="Create and manage painter accounts, including their crew assignment and hourly rate."
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
