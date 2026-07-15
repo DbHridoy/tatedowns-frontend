@@ -8,7 +8,10 @@ const ProductionDayModal = ({
   delayedItems = [],
   canManage = false,
   canPainterUpdate = false,
+  canSchedule = false,
+  isScheduleDisabled = false,
   onClose,
+  onScheduleJob,
   onUpdateStatus,
   onUpdatePainterHours,
   onUpdateMaterialExpenses,
@@ -32,6 +35,16 @@ const ProductionDayModal = ({
       footer={
         canManage || canPainterUpdate ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            {canSchedule ? (
+              <button
+                type="button"
+                onClick={onScheduleJob}
+                disabled={isScheduleDisabled}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Schedule Job
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onClose}

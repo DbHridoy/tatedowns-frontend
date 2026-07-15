@@ -5,9 +5,12 @@ import ProductionCalendarToolbar from "../../Components/Production/ProductionCal
 import ProductionCalendarGrid from "../../Components/Production/ProductionCalendarGrid";
 import ProductionDayModal from "../../Components/Production/ProductionDayModal";
 import RainDelayModal from "../../Components/Production/RainDelayModal";
+import ScheduleJobModal from "../../Components/Production/ScheduleJobModal";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
 import {
   useApplyRainDelayMutation,
+  useCreateScheduleItemMutation,
+  useGetAvailableJobsForSchedulingQuery,
   useGetCrewsQuery,
   useGetProductionCalendarScheduleQuery,
   useUpdateScheduleItemMutation,
@@ -22,6 +25,7 @@ import {
   formatDateKey,
   groupDelayedItemsByDay,
   groupScheduleItemsByDay,
+  normalizeCrew,
   normalizeProductionCalendarResponse,
 } from "../../utils/productionCalendar";
 
@@ -48,6 +52,7 @@ const ProductionCalendarPage = () => {
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [rainDelayItem, setRainDelayItem] = useState(null);
+  const [scheduleModalDay, setScheduleModalDay] = useState(null);
 
   const calendarSections = useMemo(
     () => buildCalendarSections(viewMode, referenceDate),
@@ -71,7 +76,11 @@ const ProductionCalendarPage = () => {
     };
   }, [calendarDays]);
 
-  const { isLoading: isCrewsLoading } = useGetCrewsQuery();
+  const { data: crewsData, isLoading: isCrewsLoading } = useGetCrewsQuery();
+  const { data: availableJobsData, isLoading: isAvailableJobsLoading } =
+    useGetAvailableJobsForSchedulingQuery(undefined, {
+      skip: !canManage,
+    });
   const { data: calendarData, isLoading: isCalendarLoading, isError, refetch: refetchCalendar } =
     useGetProductionCalendarScheduleQuery({
       viewMode,
@@ -82,11 +91,18 @@ const ProductionCalendarPage = () => {
     useApplyRainDelayMutation();
   const [updateScheduleItem] = useUpdateScheduleItemMutation();
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
+  const [createScheduleItem, { isLoading: isCreatingSchedule }] =
+    useCreateScheduleItemMutation();
 
   const normalizedCalendar = useMemo(
     () => normalizeProductionCalendarResponse(calendarData),
     [calendarData]
   );
+  const crews = useMemo(
+    () => (crewsData?.data || []).map(normalizeCrew),
+    [crewsData?.data]
+  );
+  const availableJobs = availableJobsData?.data || [];
   const itemsByDay = useMemo(() => {
     return groupScheduleItemsByDay(normalizedCalendar.items, calendarDays);
   }, [calendarDays, normalizedCalendar.items]);
@@ -98,6 +114,12 @@ const ProductionCalendarPage = () => {
   const selectedDayDelayedItems = selectedDay?.key
     ? delayedItemsByDay[selectedDay.key] || []
     : [];
+
+  const openScheduleFromDay = () => {
+    if (!selectedDay) return;
+    setScheduleModalDay(selectedDay);
+    setSelectedDay(null);
+  };
 
   const handleUpdateStatus = async (item, status) => {
     if (status === item.status) return;
@@ -149,6 +171,17 @@ const ProductionCalendarPage = () => {
     }
   };
 
+  const handleScheduleJob = async (payload) => {
+    try {
+      await createScheduleItem(payload).unwrap();
+      await refetchCalendar();
+      toast.success("Job scheduled successfully.");
+      setScheduleModalDay(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to schedule job.");
+    }
+  };
+
   return (
     <div className="page-container space-y-6">
       <ProductionCalendarToolbar
@@ -188,11 +221,27 @@ const ProductionCalendarPage = () => {
         items={selectedDayItems}
         delayedItems={selectedDayDelayedItems}
         canManage={canManage}
+        canSchedule={canManage}
+        isScheduleDisabled={isAvailableJobsLoading || !availableJobs.length}
         onClose={() => setSelectedDay(null)}
+        onScheduleJob={openScheduleFromDay}
         onUpdateStatus={handleUpdateStatus}
         onUpdatePainterHours={handleUpdatePainterHours}
         onUpdateMaterialExpenses={handleUpdateMaterialExpenses}
         onApplyRainDelay={(item) => setRainDelayItem(item)}
+      />
+
+      <ScheduleJobModal
+        isOpen={Boolean(scheduleModalDay)}
+        selectedDate={scheduleModalDay?.key || formatDateKey(new Date())}
+        selectedCrewId=""
+        selectedJobId=""
+        crews={crews}
+        jobs={availableJobs}
+        isLoadingJobs={isAvailableJobsLoading}
+        isSubmitting={isCreatingSchedule}
+        onClose={() => setScheduleModalDay(null)}
+        onSubmit={handleScheduleJob}
       />
 
       <RainDelayModal
