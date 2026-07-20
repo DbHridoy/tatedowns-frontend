@@ -1,4 +1,7 @@
-import { getCalendarNavigationLabel } from "../../utils/productionCalendar";
+import {
+  getCalendarNavigationLabel,
+  getCrewColorClasses,
+} from "../../utils/productionCalendar";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -130,15 +133,7 @@ const ProductionCalendarGrid = ({
                       {dayItems.slice(0, 3).map((item) => (
                         <div
                           key={item._id}
-                          className={`rounded-xl px-2.5 py-2 text-[11px] shadow-sm ${
-                            item.status === "Pending Close"
-                              ? "bg-emerald-100 text-emerald-900"
-                              : item.isRainDelayed
-                                ? "bg-amber-100 text-amber-900"
-                                : item.status === "Scheduled and Open"
-                                  ? "bg-sky-100 text-sky-900"
-                                  : "bg-slate-100 text-slate-800"
-                          }`}
+                          className={`rounded-xl px-2.5 py-2 text-[11px] shadow-sm ${getCrewColorClasses(item.crewId).card}`}
                         >
                           <p className="truncate font-semibold">{item.title}</p>
                           <p className="truncate opacity-80">{item.crewName}</p>

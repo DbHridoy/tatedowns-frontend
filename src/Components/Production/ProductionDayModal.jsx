@@ -11,6 +11,7 @@ const ProductionDayModal = ({
   canSchedule = false,
   isScheduleDisabled = false,
   onClose,
+  onManageAction,
   onScheduleJob,
   onUpdateStatus,
   onUpdatePainterHours,
@@ -94,6 +95,12 @@ const ProductionDayModal = ({
                   onApplyRainDelay?.({
                     ...scheduleItem,
                     affectedFromDate: day?.key || "",
+                  })
+                }
+                onManageAction={(action, scheduleItem) =>
+                  onManageAction?.(action, {
+                    ...scheduleItem,
+                    selectedDateKey: day?.key || "",
                   })
                 }
               />

@@ -5,6 +5,7 @@ import ProductionCalendarToolbar from "../../Components/Production/ProductionCal
 import ProductionCalendarGrid from "../../Components/Production/ProductionCalendarGrid";
 import ProductionDayModal from "../../Components/Production/ProductionDayModal";
 import RainDelayModal from "../../Components/Production/RainDelayModal";
+import ScheduleManagementModal from "../../Components/Production/ScheduleManagementModal";
 import ScheduleJobModal from "../../Components/Production/ScheduleJobModal";
 import SimpleLoader from "../../Components/Common/SimpleLoader";
 import {
@@ -53,6 +54,7 @@ const ProductionCalendarPage = () => {
   const [selectedDay, setSelectedDay] = useState(null);
   const [rainDelayItem, setRainDelayItem] = useState(null);
   const [scheduleModalDay, setScheduleModalDay] = useState(null);
+  const [managementAction, setManagementAction] = useState(null);
 
   const calendarSections = useMemo(
     () => buildCalendarSections(viewMode, referenceDate),
@@ -89,7 +91,7 @@ const ProductionCalendarPage = () => {
     });
   const [applyRainDelay, { isLoading: isApplyingRainDelay }] =
     useApplyRainDelayMutation();
-  const [updateScheduleItem] = useUpdateScheduleItemMutation();
+  const [updateScheduleItem, { isLoading: isUpdatingSchedule }] = useUpdateScheduleItemMutation();
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
   const [createScheduleItem, { isLoading: isCreatingSchedule }] =
     useCreateScheduleItemMutation();
@@ -182,6 +184,37 @@ const ProductionCalendarPage = () => {
     }
   };
 
+  const handleOpenManagementAction = (action, item) => {
+    setManagementAction({
+      action,
+      item,
+      selectedDateKey: item?.selectedDateKey || selectedDay?.key || "",
+    });
+  };
+
+  const handleSubmitManagementAction = async (payload) => {
+    if (!managementAction?.item?._id) {
+      return;
+    }
+
+    try {
+      const result = await updateScheduleItem({
+        scheduleId: managementAction.item._id,
+        ...payload,
+      }).unwrap();
+      await refetchCalendar();
+      setManagementAction(null);
+      setSelectedDay(null);
+      if (result?.data?.removed) {
+        toast.success("Schedule updated.");
+        return;
+      }
+      toast.success("Schedule updated.");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to update schedule.");
+    }
+  };
+
   return (
     <div className="page-container space-y-6">
       <ProductionCalendarToolbar
@@ -224,6 +257,7 @@ const ProductionCalendarPage = () => {
         canSchedule={canManage}
         isScheduleDisabled={isAvailableJobsLoading || !availableJobs.length}
         onClose={() => setSelectedDay(null)}
+        onManageAction={handleOpenManagementAction}
         onScheduleJob={openScheduleFromDay}
         onUpdateStatus={handleUpdateStatus}
         onUpdatePainterHours={handleUpdatePainterHours}
@@ -250,6 +284,17 @@ const ProductionCalendarPage = () => {
         isSubmitting={isApplyingRainDelay}
         onClose={() => setRainDelayItem(null)}
         onSubmit={handleApplyRainDelay}
+      />
+
+      <ScheduleManagementModal
+        isOpen={Boolean(managementAction)}
+        action={managementAction?.action || ""}
+        item={managementAction?.item || null}
+        crews={crews}
+        selectedDateKey={managementAction?.selectedDateKey || ""}
+        isSubmitting={isUpdatingSchedule}
+        onClose={() => setManagementAction(null)}
+        onSubmit={handleSubmitManagementAction}
       />
     </div>
   );

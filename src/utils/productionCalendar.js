@@ -3,6 +3,8 @@ import {
   HOURS_PER_PRODUCTION_DAY,
 } from "../constants/production";
 
+const NON_WORKING_WEEKDAYS = new Set([6]);
+
 export const parseCalendarDate = (value) => {
   if (value instanceof Date) {
     return new Date(value);
@@ -30,6 +32,9 @@ export const endOfDay = (value) => {
   date.setHours(23, 59, 59, 999);
   return date;
 };
+
+export const isWorkingDay = (value) =>
+  !NON_WORKING_WEEKDAYS.has(parseCalendarDate(value).getDay());
 
 export const addDays = (value, amount) => {
   const date = parseCalendarDate(value);
@@ -407,6 +412,9 @@ export const normalizeScheduleItem = (item) => {
   const rainDelayHistory = Array.isArray(item?.rainDelayHistory)
     ? item.rainDelayHistory
     : [];
+  const extraDayHistory = Array.isArray(item?.extraDayHistory)
+    ? item.extraDayHistory
+    : [];
   const normalizedCrewPainters =
     rawCrewPainters.length > 0
       ? rawCrewPainters.map((painter) => {
@@ -465,7 +473,9 @@ export const normalizeScheduleItem = (item) => {
     const delayedUntil = addDays(segment.startDate, -1);
 
     while (startOfDay(current) <= startOfDay(delayedUntil)) {
-      dates.push(formatDateKey(current));
+      if (isWorkingDay(current)) {
+        dates.push(formatDateKey(current));
+      }
       current = addDays(current, 1);
     }
 
@@ -522,6 +532,11 @@ export const normalizeScheduleItem = (item) => {
     rainDelayHistory,
     isRainDelayed: Boolean(item?.isRainDelayed || item?.rainDelayDays || rainDelayHistory.length),
     rainDelayDays: visibleRainDelayDays,
+    extraDayHistory,
+    totalExtraDays: extraDayHistory.reduce(
+      (total, entry) => total + Number(entry?.extraDays || 0),
+      0
+    ),
     totalRainDelayDays:
       Number(item?.rainDelayDays) ||
       rainDelayHistory.reduce(
@@ -661,4 +676,38 @@ export const getScheduleStatusClasses = (status) => {
     default:
       return "bg-slate-100 text-slate-700";
   }
+};
+
+const CREW_COLOR_PALETTE = [
+  {
+    card: "bg-rose-100 text-rose-900",
+    detail: "border-rose-200 bg-rose-50",
+  },
+  {
+    card: "bg-amber-100 text-amber-900",
+    detail: "border-amber-200 bg-amber-50",
+  },
+  {
+    card: "bg-emerald-100 text-emerald-900",
+    detail: "border-emerald-200 bg-emerald-50",
+  },
+  {
+    card: "bg-cyan-100 text-cyan-900",
+    detail: "border-cyan-200 bg-cyan-50",
+  },
+  {
+    card: "bg-indigo-100 text-indigo-900",
+    detail: "border-indigo-200 bg-indigo-50",
+  },
+  {
+    card: "bg-fuchsia-100 text-fuchsia-900",
+    detail: "border-fuchsia-200 bg-fuchsia-50",
+  },
+];
+
+export const getCrewColorClasses = (crewId) => {
+  const key = String(crewId || "");
+  const index = [...key].reduce((sum, char) => sum + char.charCodeAt(0), 0)
+    % CREW_COLOR_PALETTE.length;
+  return CREW_COLOR_PALETTE[index];
 };
