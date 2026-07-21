@@ -74,15 +74,6 @@ const ProductionDayModal = ({
         {items.length ? (
           items.map((item) => (
             <div key={item._id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-              <div className="mb-3">
-                <p className="text-sm font-semibold text-slate-900">
-                  {item.crewName || "Crew pending"}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {item.clientName || "Client pending"}
-                </p>
-              </div>
-
               <ScheduleItemCard
                 item={item}
                 selectedDateKey={day?.key || ""}

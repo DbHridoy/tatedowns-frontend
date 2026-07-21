@@ -3,7 +3,8 @@ import {
   HOURS_PER_PRODUCTION_DAY,
 } from "../constants/production";
 
-const NON_WORKING_WEEKDAYS = new Set([6]);
+const NON_WORKING_WEEKDAYS = new Set([0, 6]);
+const getMondayFirstDayIndex = (value) => (parseCalendarDate(value).getDay() + 6) % 7;
 
 export const parseCalendarDate = (value) => {
   if (value instanceof Date) {
@@ -68,7 +69,7 @@ const getWeekOfYear = (value) => {
   const date = startOfDay(value);
   const yearStart = new Date(date.getFullYear(), 0, 1);
   const diffDays = Math.floor((date.getTime() - yearStart.getTime()) / 86400000);
-  return Math.floor((diffDays + yearStart.getDay()) / 7) + 1;
+  return Math.floor((diffDays + getMondayFirstDayIndex(yearStart)) / 7) + 1;
 };
 
 const getOrdinal = (value) => {
@@ -124,8 +125,8 @@ export const getCalendarRange = (viewMode, referenceDate = new Date()) => {
 
   if (viewMode === CALENDAR_VIEW_MODES.WEEK) {
     return {
-      startDate: addDays(anchor, -anchor.getDay()),
-      endDate: addDays(addDays(anchor, -anchor.getDay()), 6),
+      startDate: addDays(anchor, -getMondayFirstDayIndex(anchor)),
+      endDate: addDays(addDays(anchor, -getMondayFirstDayIndex(anchor)), 6),
     };
   }
 
@@ -161,6 +162,7 @@ export const buildCalendarDays = (viewMode, referenceDate = new Date()) => {
         weekday: "short",
       }),
       isToday: formatDateKey(current) === formatDateKey(new Date()),
+      isWeekend: !isWorkingDay(current),
     });
   }
 
@@ -170,8 +172,8 @@ export const buildCalendarDays = (viewMode, referenceDate = new Date()) => {
 export const buildMonthGrid = (monthDate) => {
   const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
   const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
-  const firstVisibleDate = addDays(monthStart, -monthStart.getDay());
-  const lastVisibleDate = addDays(monthEnd, 6 - monthEnd.getDay());
+  const firstVisibleDate = addDays(monthStart, -getMondayFirstDayIndex(monthStart));
+  const lastVisibleDate = addDays(monthEnd, 6 - getMondayFirstDayIndex(monthEnd));
   const days = [];
 
   for (
@@ -187,6 +189,7 @@ export const buildMonthGrid = (monthDate) => {
         weekday: "short",
       }),
       isToday: formatDateKey(current) === formatDateKey(new Date()),
+      isWeekend: !isWorkingDay(current),
       isCurrentMonth: current.getMonth() === monthDate.getMonth(),
     });
   }
@@ -215,6 +218,7 @@ export const buildCalendarSections = (viewMode, referenceDate = new Date()) => {
             label: formatDateLabel(anchor),
             weekday: anchor.toLocaleDateString("en-US", { weekday: "short" }),
             isToday: formatDateKey(anchor) === formatDateKey(new Date()),
+            isWeekend: !isWorkingDay(anchor),
             isCurrentMonth: true,
           },
         ].map((day) => ({
@@ -415,6 +419,11 @@ export const normalizeScheduleItem = (item) => {
   const extraDayHistory = Array.isArray(item?.extraDayHistory)
     ? item.extraDayHistory
     : [];
+  const weekendExceptionDateKeys = Array.isArray(item?.weekendExceptionDates)
+    ? item.weekendExceptionDates
+        .map((value) => (value ? formatDateKey(value) : ""))
+        .filter(Boolean)
+    : [];
   const normalizedCrewPainters =
     rawCrewPainters.length > 0
       ? rawCrewPainters.map((painter) => {
@@ -543,6 +552,7 @@ export const normalizeScheduleItem = (item) => {
         (total, entry) => total + Number(entry?.delayDays || 0),
         0
       ),
+    weekendExceptionDateKeys,
     painterNames,
     crewPainters,
     painterDailyHours,
@@ -613,18 +623,47 @@ export const groupDelayedItemsByDay = (items = [], days = []) => {
 
 export const isScheduleItemOnDay = (item, dayKey) => {
   if (!item?.startDate || !item?.endDate) return false;
+  const normalizedDayKey = formatDateKey(dayKey);
+  if (Array.isArray(item?.weekendExceptionDateKeys) && item.weekendExceptionDateKeys.includes(normalizedDayKey)) {
+    return true;
+  }
   if (Array.isArray(item?.scheduleSegments) && item.scheduleSegments.length) {
-    return item.scheduleSegments.some((segment) => {
+    const isDirectWorkDay = item.scheduleSegments.some((segment) => {
       const day = startOfDay(dayKey);
       const start = startOfDay(segment.startDate);
       const end = endOfDay(segment.endDate);
       return day >= start && day <= end;
     });
+    if (isDirectWorkDay) {
+      return true;
+    }
+
+    const day = startOfDay(dayKey);
+    const start = startOfDay(item.startDate);
+    const end = endOfDay(item.endDate);
+    return day >= start && day <= end && !isWorkingDay(day);
   }
   const day = startOfDay(dayKey);
   const start = startOfDay(item.startDate);
   const end = endOfDay(item.endDate);
   return day >= start && day <= end;
+};
+
+export const canLogScheduleValuesOnDate = (item, dayKey) => {
+  if (!item || !dayKey) return false;
+  const normalizedDayKey = formatDateKey(dayKey);
+  if (Array.isArray(item?.weekendExceptionDateKeys) && item.weekendExceptionDateKeys.includes(normalizedDayKey)) {
+    return true;
+  }
+  if (!Array.isArray(item?.scheduleSegments)) {
+    return false;
+  }
+  return item.scheduleSegments.some((segment) => {
+    const day = startOfDay(normalizedDayKey);
+    const start = startOfDay(segment.startDate);
+    const end = endOfDay(segment.endDate);
+    return day >= start && day <= end;
+  });
 };
 
 export const sortScheduleItems = (items = []) =>

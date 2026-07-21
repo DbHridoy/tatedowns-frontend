@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { SCHEDULE_STATUS_OPTIONS } from "../../constants/production";
 import formatCurrency from "../../utils/formatCurrency";
 import {
+  canLogScheduleValuesOnDate,
   formatDateLabel,
   getCrewColorClasses,
   getScheduleStatusClasses,
+  isWorkingDay,
 } from "../../utils/productionCalendar";
 
 const ScheduleItemCard = ({
@@ -22,6 +24,12 @@ const ScheduleItemCard = ({
   const statusClassName = getScheduleStatusClasses(item.status);
   const crewColor = getCrewColorClasses(item.crewId);
   const canShowStatusSelect = canManage || (canPainterUpdate && item.canPainterUpdateStatus);
+  const canEditSelectedDateValues = canLogScheduleValuesOnDate(item, selectedDateKey);
+  const isSelectedDateWeekend = selectedDateKey ? !isWorkingDay(selectedDateKey) : false;
+  const isWeekendException =
+    Boolean(selectedDateKey) &&
+    Array.isArray(item?.weekendExceptionDateKeys) &&
+    item.weekendExceptionDateKeys.includes(selectedDateKey);
   const [hoursByPainter, setHoursByPainter] = useState({});
   const [materialExpenses, setMaterialExpenses] = useState([]);
   const shouldShowMaterials = canManage || materialExpenses.length > 0;
@@ -133,6 +141,23 @@ const ScheduleItemCard = ({
           <p>
             {formatDateLabel(item.startDate)} - {formatDateLabel(item.endDate)}
           </p>
+          {isSelectedDateWeekend ? (
+            <p className="font-medium text-violet-700">
+              {isWeekendException
+                ? "Weekend exception enabled for this date."
+                : "Weekend date. Mark as exception to log work on this day."}
+            </p>
+          ) : null}
+          {isWeekendException ? (
+            <div className="rounded-md border border-violet-200 bg-violet-50 px-2.5 py-2 text-violet-900">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                Weekend Exception
+              </p>
+              <p className="mt-1 text-xs">
+                This weekend date is approved for work, so hours and material costs can be entered.
+              </p>
+            </div>
+          ) : null}
           {crewPainters.length ? (
             <div className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2">
               <p className="font-medium text-slate-700">
@@ -153,6 +178,7 @@ const ScheduleItemCard = ({
                         type="number"
                         min="0"
                         step="0.25"
+                        disabled={!canEditSelectedDateValues}
                         value={hoursByPainter[painter._id] ?? ""}
                         onChange={(event) =>
                           setHoursByPainter((current) => ({
@@ -160,7 +186,7 @@ const ScheduleItemCard = ({
                             [painter._id]: event.target.value,
                           }))
                         }
-                        className="w-24 rounded-md border border-gray-200 px-2 py-1 text-right text-xs text-slate-700"
+                        className="w-24 rounded-md border border-gray-200 px-2 py-1 text-right text-xs text-slate-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="0"
                       />
                     ) : (
@@ -197,6 +223,7 @@ const ScheduleItemCard = ({
                         <>
                           <input
                             type="text"
+                            disabled={!canEditSelectedDateValues}
                             value={entry.description}
                             onChange={(event) =>
                               setMaterialExpenses((current) =>
@@ -207,13 +234,14 @@ const ScheduleItemCard = ({
                                 )
                               )
                             }
-                            className="rounded-md border border-gray-200 px-2 py-1 text-xs text-slate-700"
+                            className="rounded-md border border-gray-200 px-2 py-1 text-xs text-slate-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                             placeholder="Material description"
                           />
                           <input
                             type="number"
                             min="0"
                             step="0.01"
+                            disabled={!canEditSelectedDateValues}
                             value={entry.amount}
                             onChange={(event) =>
                               setMaterialExpenses((current) =>
@@ -224,12 +252,13 @@ const ScheduleItemCard = ({
                                 )
                               )
                             }
-                            className="rounded-md border border-gray-200 px-2 py-1 text-xs text-slate-700"
+                            className="rounded-md border border-gray-200 px-2 py-1 text-xs text-slate-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                             placeholder="0.00"
                           />
                           <div className="flex gap-2">
                             <input
                               type="date"
+                              disabled={!canEditSelectedDateValues}
                               value={entry.expenseDate}
                               onChange={(event) =>
                                 setMaterialExpenses((current) =>
@@ -240,16 +269,17 @@ const ScheduleItemCard = ({
                                   )
                                 )
                               }
-                              className="min-w-0 flex-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-slate-700"
+                              className="min-w-0 flex-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-slate-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                             />
                             <button
                               type="button"
+                              disabled={!canEditSelectedDateValues}
                               onClick={() =>
                                 setMaterialExpenses((current) =>
                                   current.filter((itemEntry) => itemEntry.id !== entry.id)
                                 )
                               }
-                              className="rounded-md border border-red-200 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50"
+                              className="rounded-md border border-red-200 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
                             >
                               Remove
                             </button>
@@ -323,8 +353,9 @@ const ScheduleItemCard = ({
           {canManage && crewPainters.length ? (
             <button
               type="button"
+              disabled={!canEditSelectedDateValues}
               onClick={handleSavePainterHours}
-              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100"
+              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Save Painter Hours
             </button>
@@ -333,15 +364,17 @@ const ScheduleItemCard = ({
             <>
               <button
                 type="button"
+                disabled={!canEditSelectedDateValues}
                 onClick={handleAddMaterialExpense}
-                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100"
+                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Add Material Expense
               </button>
               <button
                 type="button"
+                disabled={!canEditSelectedDateValues}
                 onClick={handleSaveMaterialExpenses}
-                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100"
+                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Save Material Expenses
               </button>
@@ -375,6 +408,15 @@ const ScheduleItemCard = ({
                 Manage Schedule
               </summary>
               <div className="flex flex-col gap-2 border-t border-slate-200 px-2 py-2">
+                {isSelectedDateWeekend && !isWeekendException ? (
+                  <button
+                    type="button"
+                    onClick={() => onManageAction?.("markWeekendException", item)}
+                    className="rounded-md border border-violet-200 bg-violet-50 px-2 py-1.5 text-left text-xs font-medium text-violet-800 hover:bg-violet-100"
+                  >
+                    Mark Weekend Exception
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => onManageAction?.("changeStartDate", item)}

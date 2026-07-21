@@ -185,6 +185,13 @@ const ProductionCalendarPage = () => {
   };
 
   const handleOpenManagementAction = (action, item) => {
+    if (action === "markWeekendException") {
+      handleSubmitManagementAction({
+        action,
+        workDate: item?.selectedDateKey || selectedDay?.key || "",
+      }, item);
+      return;
+    }
     setManagementAction({
       action,
       item,
@@ -192,14 +199,15 @@ const ProductionCalendarPage = () => {
     });
   };
 
-  const handleSubmitManagementAction = async (payload) => {
-    if (!managementAction?.item?._id) {
+  const handleSubmitManagementAction = async (payload, explicitItem) => {
+    const targetItem = explicitItem || managementAction?.item;
+    if (!targetItem?._id) {
       return;
     }
 
     try {
       const result = await updateScheduleItem({
-        scheduleId: managementAction.item._id,
+        scheduleId: targetItem._id,
         ...payload,
       }).unwrap();
       await refetchCalendar();
